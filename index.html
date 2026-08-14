@@ -1,0 +1,3712 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+  <title>表达力训练</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #f5f5f7;
+      --bg-elev: #ffffff;
+      --bg-soft: rgba(0,0,0,0.025);
+      --bg-softer: rgba(0,0,0,0.015);
+      --card-bg: #ffffff;
+      --text-primary: #1d1d1f;
+      --text-secondary: #6e6e73;
+      --text-tertiary: #a1a1a6;
+      --accent: #0071e3;
+      --accent-hover: #0077ed;
+      --accent-soft: rgba(0,113,227,0.06);
+      --accent-softer: rgba(0,113,227,0.04);
+      --border: rgba(0, 0, 0, 0.06);
+      --border-soft: rgba(0,0,0,0.045);
+      --shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
+      --shadow-md: 0 2px 8px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06);
+      --shadow-lg: 0 4px 16px rgba(0,0,0,0.04), 0 16px 40px rgba(0,0,0,0.08), 0 48px 80px rgba(0,0,0,0.04);
+      --radius-card: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
+      --radius-pill: 999px;
+      --transition: 180ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      --transition-fast: 120ms ease;
+    }
+
+    html { font-size: 16px; }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      background-image:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0, 113, 227, 0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 90% 110%, rgba(88, 86, 214, 0.04) 0%, transparent 50%);
+      color: var(--text-primary);
+      font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      padding: 0 20px 56px;
+    }
+
+    /* ─── Header ─── */
+    .header {
+      width: 100%;
+      max-width: 680px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 28px 0 6px;
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-mark {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, var(--accent) 0%, #5856d6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+      flex-shrink: 0;
+      font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      user-select: none;
+    }
+
+    .brand-wordmark {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+
+    .brand-title em {
+      font-style: normal;
+      background: linear-gradient(135deg, var(--accent), #5856d6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .brand-tagline {
+      font-size: 0.78rem;
+      color: var(--text-tertiary);
+      letter-spacing: 0.01em;
+      line-height: 1.4;
+      margin: 0;
+    }
+
+    .btn-library {
+      background: rgba(0, 113, 227, 0.07);
+      color: var(--accent);
+      border: 1px solid rgba(0, 113, 227, 0.15);
+      border-radius: var(--radius-pill);
+      padding: 7px 16px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
+      letter-spacing: -0.01em;
+    }
+
+    .btn-library:hover {
+      background: rgba(0, 113, 227, 0.12);
+      border-color: rgba(0, 113, 227, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .btn-library:active { transform: translateY(0) scale(0.98); }
+
+    /* ─── Main Card ─── */
+    .card {
+      width: 100%;
+      max-width: 680px;
+      background: var(--card-bg);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-lg);
+      border: 0.5px solid rgba(0,0,0,0.04);
+      padding: 8px 0 6px;
+      text-align: center;
+      position: relative;
+      transition: box-shadow var(--transition), border-color var(--transition);
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+      pointer-events: none;
+    }
+
+    /* 卡片在训练状态时提升视觉权重 */
+    .card.is-running {
+      box-shadow: 0 4px 16px rgba(0,0,0,0.04), 0 16px 40px rgba(0, 113, 227, 0.10), 0 48px 80px rgba(0,0,0,0.06);
+      border-color: rgba(0, 113, 227, 0.16);
+    }
+
+    .card-section {
+      padding: 24px 32px 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 14px;
+    }
+
+    .card-section.scope-section { padding-bottom: 18px; }
+    .card-section.challenge-section { padding: 26px 32px 22px; gap: 10px; }
+    .card-section.duration-section { padding: 22px 32px 26px; gap: 16px; }
+
+    .card-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0 28px;
+    }
+
+    .section-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      text-align: left;
+    }
+
+    /* ─── Scope Selector（抽题范围） ─── */
+    .scope-selector-wrap {
+      position: relative;
+    }
+
+    .scope-selector {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg-softer);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: all var(--transition);
+      text-align: left;
+      font: inherit;
+    }
+
+    .scope-selector:hover {
+      background: var(--accent-softer);
+      border-color: rgba(0,113,227,0.22);
+      transform: translateY(-1px);
+    }
+
+    .scope-selector:active { transform: translateY(0) scale(0.99); }
+
+    .scope-selector.open {
+      background: var(--accent-softer);
+      border-color: rgba(0,113,227,0.28);
+    }
+
+    .scope-selector-icon {
+      font-size: 1rem;
+      width: 22px;
+      text-align: center;
+      flex-shrink: 0;
+      filter: saturate(0.8);
+    }
+
+    .scope-selector-text {
+      flex: 1;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
+    }
+
+    .scope-selector-caret {
+      font-size: 0.78rem;
+      color: var(--text-tertiary);
+      transition: transform var(--transition);
+      flex-shrink: 0;
+    }
+
+    .scope-selector.open .scope-selector-caret { transform: rotate(180deg); }
+
+    /* 抽题范围下拉菜单：相对选择器 wrapper 定位，正下方、全宽 */
+    .scope-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      right: 0;
+      width: 100%;
+      background: var(--card-bg);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md);
+      padding: 6px 0;
+      max-height: 360px;
+      overflow-y: auto;
+      z-index: 200;
+      border: 0.5px solid rgba(0,0,0,0.05);
+      text-align: left;
+      opacity: 0;
+      transform: translateY(-6px);
+      pointer-events: none;
+      transition: opacity 180ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                  transform 180ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    .scope-menu.open {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    /* .scope-item / .scope-separator / .scope-empty / .scope-section-label
+       见下方「旧 .scope-menu 样式已迁移」段（约 640 行）。此处只定义容器 .scope-menu 本身。 */
+
+    /* ─── Challenge · 题目区域 ─── */
+    .challenge-section { position: relative; }
+
+    /* 题目区域：从单层 slot 改为更"舞台感"的容器 */
+    .slot-wrap {
+      position: relative;
+      min-height: 188px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 6px 0 4px;
+      padding: 28px 18px;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(180deg, rgba(0,113,227,0.025) 0%, rgba(0,0,0,0.012) 100%);
+      border: 1px solid var(--border-soft);
+      overflow: hidden;
+      will-change: background, border-color, transform, box-shadow;
+      transition: background var(--transition), border-color var(--transition), transform 200ms ease, box-shadow 200ms ease;
+    }
+
+    /* 核心交互热区：默认 hover 提示用户"这是个可点击的盒子" */
+    .slot-wrap.slot-hotzone {
+      cursor: pointer;
+      font: inherit;
+      color: inherit;
+      text-align: center;
+      width: 100%;
+    }
+    .slot-wrap.slot-hotzone:not(.spinning):not(:disabled):hover {
+      background: linear-gradient(180deg, rgba(0,113,227,0.06) 0%, rgba(0,113,227,0.02) 100%);
+      border-color: rgba(0,113,227,0.32);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(0,113,227,0.08);
+    }
+    .slot-wrap.slot-hotzone:not(.spinning):not(:disabled):active {
+      transform: translateY(0) scale(0.995);
+    }
+    .slot-wrap.slot-hotzone:focus-visible {
+      outline: none;
+      border-color: rgba(0,113,227,0.45);
+      box-shadow: 0 0 0 4px rgba(0,113,227,0.12);
+    }
+
+    .slot-wrap.spinning {
+      background: linear-gradient(180deg, rgba(0,113,227,0.07) 0%, rgba(0,113,227,0.03) 100%);
+      border-color: rgba(0,113,227,0.22);
+    }
+
+    /* 默认显示的"点击抽取"小角标 */
+    .slot-cta {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--accent);
+      background: rgba(0,113,227,0.08);
+      padding: 4px 9px;
+      border-radius: 999px;
+      opacity: 0;
+      transform: translateY(-2px);
+      transition: opacity 200ms ease, transform 200ms ease;
+      pointer-events: none;
+    }
+    .slot-wrap.slot-hotzone:not(.spinning):hover .slot-cta,
+    .slot-wrap.slot-hotzone:not(.spinning):focus-visible .slot-cta {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    /* 已抽到题后角标隐藏 */
+    .slot-wrap[data-has-topic="1"] .slot-cta { display: none; }
+
+    .slot-layer {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 28px 18px;
+      opacity: 0;
+      will-change: opacity, transform;
+      transform: translateY(0);
+      pointer-events: none;
+      transition: opacity 0.08s ease, transform 0.08s ease;
+    }
+
+    .slot-layer.visible { opacity: 1; }
+
+    .topic {
+      font-size: clamp(2.0rem, 4.6vw, 2.9rem);
+      font-weight: 700;
+      line-height: 1.35;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      transform: translateZ(0);
+      transition: opacity 240ms ease, transform 260ms cubic-bezier(0.34, 1.4, 0.64, 1);
+    }
+
+    .topic.empty {
+      font-size: 1.02rem;
+      font-weight: 500;
+      color: var(--text-tertiary);
+      line-height: 1.7;
+    }
+
+    /* 抽中揭晓动画：克制、轻量、ease-out */
+    .topic.land {
+      animation: topicLand 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes topicLand {
+      0%   { transform: scale(0.96) translateZ(0); opacity: 0; }
+      100% { transform: scale(1)    translateZ(0); opacity: 1; }
+    }
+
+    /* 揭晓瞬间给题目区域一个非常短暂的高光边框（400ms 后自动消失） */
+    .slot-wrap.reveal {
+      animation: revealGlow 0.4s ease-out;
+    }
+    @keyframes revealGlow {
+      0%   { border-color: rgba(0,113,227,0); box-shadow: 0 0 0 0 rgba(0,113,227,0); }
+      35%  { border-color: rgba(0,113,227,0.45); box-shadow: 0 0 0 6px rgba(0,113,227,0.10); }
+      100% { border-color: var(--border-soft); box-shadow: 0 0 0 0 rgba(0,113,227,0); }
+    }
+
+    /* Ben 的状态副文案 */
+    .slot-hint {
+      display: block;
+      text-align: center;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text-tertiary);
+      letter-spacing: 0.02em;
+      min-height: 18px;
+      margin-top: 6px;
+      transition: opacity 300ms ease;
+    }
+
+    .topic.empty {
+      display: none;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: var(--radius-pill);
+      align-self: center;
+      opacity: 0.85;
+    }
+
+    .topic-tag.show { display: inline-block; }
+    .topic-tag.ungrouped,
+    .topic-tag.group {
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    /* ─── Status Strip（动态状态提示） ─── */
+    .status-strip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      align-self: center;
+      padding: 8px 16px;
+      border-radius: var(--radius-pill);
+      background: rgba(0,0,0,0.04);
+      color: var(--text-tertiary);
+      font-size: 0.82rem;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      transition: background 320ms ease, color 320ms ease;
+      will-change: background, color;
+    }
+
+    .status-icon {
+      font-size: 0.95rem;
+      line-height: 1;
+      display: inline-flex;
+      transition: transform 320ms ease;
+    }
+
+    .status-strip[data-state="idle"] {
+      background: rgba(0,0,0,0.04);
+      color: var(--text-tertiary);
+    }
+
+    .status-strip[data-state="spinning"] {
+      background: var(--accent-softer);
+      color: var(--accent);
+    }
+
+    .status-strip[data-state="ready"] {
+      background: rgba(52, 199, 89, 0.12);
+      color: #1f9e4f;
+    }
+    .status-strip[data-state="ready"] .status-icon { transform: scale(1.05); }
+
+    .status-strip[data-state="running"] {
+      background: rgba(52, 199, 89, 0.10);
+      color: #1f9e4f;
+    }
+
+    .status-strip[data-state="paused"] {
+      background: rgba(255, 159, 10, 0.12);
+      color: #b35a00;
+    }
+    .status-strip[data-state="done"] {
+      background: rgba(52, 199, 89, 0.14);
+      color: #1f9e4f;
+    }
+
+    /* ─── Duration & Timer ─── */
+    .duration-presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .duration-chip {
+      flex: 1 1 auto;
+      min-width: 60px;
+      background: var(--bg-soft);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-pill);
+      padding: 9px 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition);
+      letter-spacing: -0.01em;
+    }
+
+    .duration-chip:hover {
+      background: var(--accent-softer);
+      border-color: rgba(0,113,227,0.22);
+      color: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    .duration-chip:active { transform: translateY(0) scale(0.98); }
+
+    .duration-chip:disabled,
+    .duration-chip.locked {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .duration-chip:disabled:hover,
+    .duration-chip.locked:hover {
+      background: var(--bg-soft);
+      border-color: var(--border-soft);
+      color: var(--text-secondary);
+      transform: none;
+    }
+
+    .duration-chip.active {
+      background: linear-gradient(135deg, var(--accent) 0%, #5856d6 100%);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 2px 8px rgba(0, 113, 227, 0.28);
+    }
+
+    .custom-duration {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 4px 2px;
+      border-radius: var(--radius-md);
+      background: var(--bg-softer);
+      border: 1px solid var(--border-soft);
+      overflow: hidden;
+      max-height: 0;
+      opacity: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      margin-top: 0;
+      transition: max-height 220ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                  opacity 200ms ease,
+                  padding 220ms ease,
+                  margin-top 220ms ease;
+    }
+
+    .custom-duration.show {
+      display: flex;
+      max-height: 220px;
+      opacity: 1;
+      padding-top: 14px;
+      padding-bottom: 6px;
+      margin-top: 2px;
+    }
+
+    .custom-duration-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      letter-spacing: 0.04em;
+    }
+
+    .custom-duration-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .custom-duration-field {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .time-sep {
+      font-size: 1.4rem;
+      color: var(--text-tertiary);
+      font-weight: 300;
+      margin-top: -14px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .custom-duration-unit {
+      font-size: 0.7rem;
+      color: var(--text-tertiary);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    .time-input {
+      background: rgba(0,0,0,0.04);
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      padding: 8px 4px;
+      font-size: 1.1rem;
+      width: 64px;
+      text-align: center;
+      outline: none;
+      font-weight: 600;
+      transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+      font-variant-numeric: tabular-nums;
+      -moz-appearance: textfield;
+    }
+
+    .time-input::-webkit-outer-spin-button,
+    .time-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .time-input:focus {
+      border-color: var(--accent);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(0,113,227,0.12);
+    }
+
+    .time-input:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-confirm-time {
+      background: linear-gradient(135deg, var(--accent) 0%, #5856d6 100%);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-pill);
+      padding: 7px 22px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
+      letter-spacing: -0.01em;
+      box-shadow: 0 2px 6px rgba(0,113,227,0.2);
+    }
+
+    .btn-confirm-time:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,113,227,0.32);
+      filter: brightness(1.05);
+    }
+    .btn-confirm-time:active:not(:disabled) { transform: translateY(0) scale(0.97); }
+    .btn-confirm-time:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .custom-duration-error {
+      min-height: 14px;
+      font-size: 0.72rem;
+      color: #d92f20;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      transition: opacity 200ms ease;
+    }
+
+    .timer-display {
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 10px;
+      padding: 4px 0 0;
+    }
+
+    .timer {
+      font-size: 2.4rem;
+      font-weight: 200;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.01em;
+      color: var(--text-tertiary);
+      transition: color var(--transition);
+      line-height: 1;
+    }
+
+    .timer.running { color: var(--text-primary); }
+    .timer.done    { color: #1f9e4f; animation: timerPulse 1.2s ease-in-out infinite; }
+
+    @keyframes timerPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .timer-sub {
+      font-size: 0.78rem;
+      color: var(--text-tertiary);
+      font-weight: 500;
+      letter-spacing: 0.06em;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      background: rgba(0,0,0,0.05);
+      border-radius: var(--radius-pill);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #5856d6);
+      border-radius: var(--radius-pill);
+      width: 0%;
+      transition: width 0.6s linear, background 0.5s ease;
+    }
+
+    .progress-fill.almost { background: linear-gradient(90deg, #ff9f0a, #ff3b30); }
+    .progress-fill.done    { background: linear-gradient(90deg, #34c759, #30d158); }
+
+    /* ─── Primary Actions ─── */
+    .primary-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 4px 0 0;
+    }
+
+    .btn-primary {
+      width: 100%;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 16px 28px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.005em;
+      color: #fff;
+      background: linear-gradient(135deg, var(--accent) 0%, #5856d6 100%);
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(67, 97, 238, 0.25);
+      transition: transform 200ms ease, box-shadow 200ms ease, filter 200ms ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 22px rgba(67, 97, 238, 0.32);
+      filter: brightness(1.04);
+    }
+
+    .btn-primary:active:not(:disabled) {
+      transform: translateY(0) scale(0.98);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .btn-primary-icon { font-size: 0.95rem; line-height: 1; }
+
+    .btn-link {
+      background: transparent;
+      border: none;
+      padding: 6px 14px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      transition: all var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: var(--radius-pill);
+    }
+
+    .btn-link:hover { color: var(--accent); background: var(--accent-softer); }
+    .btn-link:active { transform: scale(0.97); }
+    .btn-link.dimmed { opacity: 0.35; pointer-events: none; }
+
+    .btn-link-icon { font-size: 0.95rem; line-height: 1; }
+
+    /* ─── Scope Selector（抽题范围） ─── */
+    .scope-label {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+      letter-spacing: 0.04em;
+    }
+
+    /* 旧 .scope-menu 样式已迁移到 240 段附近（与 .scope-selector 同区）。此处仅保留菜单项 / 分隔条 / 空态。 */
+
+    .scope-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: background var(--transition-fast);
+      user-select: none;
+    }
+
+    .scope-item:hover { background: var(--accent-soft); }
+    .scope-item.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+    .scope-item .scope-check { width: 14px; color: var(--accent); flex-shrink: 0; }
+    .scope-item .scope-name { flex: 1; }
+    .scope-item .scope-count {
+      font-size: 0.78rem;
+      color: var(--text-tertiary);
+      flex-shrink: 0;
+      padding: 1px 8px;
+      background: var(--bg-soft);
+      border-radius: var(--radius-pill);
+    }
+    .scope-item.active .scope-count {
+      color: var(--accent);
+      background: rgba(0,113,227,0.1);
+    }
+
+    .scope-separator {
+      height: 1px;
+      background: var(--border);
+      margin: 4px 0;
+    }
+
+    .scope-section-label {
+      padding: 5px 16px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-tertiary);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .scope-empty {
+      padding: 14px 16px;
+      font-size: 0.82rem;
+      color: var(--text-tertiary);
+      text-align: center;
+    }
+
+    /* ─── Draw Zone (removed: 抽题按钮已整合为热区 slot-hotzone) ─── */
+    /* ─── Footer Sign ─── */
+    .footer-sign {
+      width: 100%;
+      max-width: 680px;
+      margin: 28px 0 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .footer-divider {
+      width: 40px;
+      height: 1px;
+      background: var(--border-soft);
+      margin-bottom: 2px;
+    }
+
+    .footer-brand {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .footer-mark {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      opacity: 0.65;
+    }
+
+    .footer-tagline {
+      font-size: 0.75rem;
+      color: var(--text-tertiary);
+      letter-spacing: 0.02em;
+      line-height: 1.5;
+      margin: 0;
+      text-align: center;
+    }
+
+    /* ─── Modal ─── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.35);
+      backdrop-filter: blur(8px) saturate(1.2);
+      -webkit-backdrop-filter: blur(8px) saturate(1.2);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: #fff;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 600px;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.18), 0 0 0 0.5px rgba(0,0,0,0.05);
+      overflow: hidden;
+      animation: modalIn 0.3s cubic-bezier(0.34, 1.2, 0.64, 1) forwards;
+    }
+
+    @keyframes modalIn {
+      from { transform: scale(0.94) translateY(16px); opacity: 0; }
+      to   { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 22px 26px 18px;
+      border-bottom: 0.5px solid rgba(0,0,0,0.07);
+      flex-shrink: 0;
+    }
+
+    .modal-header h2 { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+
+    .modal-close {
+      background: rgba(0,0,0,0.05);
+      border: none;
+      color: var(--text-secondary);
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+
+    .modal-close:hover { background: rgba(0,0,0,0.1); color: var(--text-primary); }
+
+    .modal-toolbar {
+      padding: 14px 26px;
+      border-bottom: 0.5px solid rgba(0,0,0,0.07);
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .toolbar-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .select-all-label {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .select-all-label input { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); }
+
+    .btn-sm {
+      border: none;
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-danger {
+      background: rgba(255, 59, 48, 0.1);
+      color: #ff3b30;
+      border: 1.5px solid rgba(255, 59, 48, 0.2);
+    }
+
+    .btn-danger:hover { background: rgba(255, 59, 48, 0.18); color: #d92f20; }
+    .btn-danger:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .btn-upload {
+      background: rgba(0,0,0,0.04);
+      color: var(--text-secondary);
+      border: 1.5px solid rgba(0,0,0,0.08);
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-upload:hover { background: rgba(0,0,0,0.08); color: var(--text-primary); }
+
+    .btn-add {
+      background: rgba(0,113,227,0.1);
+      color: var(--accent);
+      border: 1.5px solid rgba(0,113,227,0.25);
+      white-space: nowrap;
+    }
+
+    .btn-add:hover { background: rgba(0,113,227,0.18); color: var(--accent-hover); }
+
+    .btn-ghost {
+      background: rgba(0,113,227,0.07);
+      color: var(--accent);
+      border: 1.5px solid rgba(0,113,227,0.18);
+      white-space: nowrap;
+    }
+    .btn-ghost:hover:not(:disabled) { background: rgba(0,113,227,0.14); }
+    .btn-ghost:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    /* 小型弹窗（分组输入/选择） */
+    .mini-modal {
+      max-width: 380px;
+      max-height: none;
+    }
+    .mini-modal .modal-toolbar { padding: 16px 22px 18px; }
+    .mini-modal .field-input { width: 100%; min-width: 0; }
+
+    .field-input, .field-select {
+      background: rgba(0,0,0,0.04);
+      border: 1.5px solid rgba(0,0,0,0.09);
+      border-radius: 8px;
+      color: var(--text-primary);
+      padding: 8px 12px;
+      font-size: 0.88rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .field-input { flex: 1; min-width: 140px; }
+    .field-input:focus, .field-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,113,227,0.08);
+    }
+    .field-select { cursor: pointer; }
+
+    .modal-count { font-size: 0.78rem; color: var(--text-tertiary); margin-left: auto; }
+
+    .modal-body {
+      overflow-y: auto;
+      padding: 16px 26px 24px;
+      flex: 1;
+    }
+
+    .modal-group { margin-bottom: 20px; }
+    .modal-group:last-child { margin-bottom: 0; }
+
+    .modal-group-title {
+      font-size: 0.86rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: rgba(0,0,0,0.025);
+      border-radius: 10px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s ease;
+      border-bottom: 1px solid rgba(0,0,0,0.04);
+    }
+
+    .modal-group-title:hover { background: rgba(0,113,227,0.05); }
+
+    /* 未分组 单独区分（中性格） */
+    .modal-group-title.ungrouped {
+      background: rgba(0,0,0,0.025);
+      color: var(--text-secondary);
+    }
+
+    /* 用户自定义分组：浅蓝高亮底 + 蓝色字 */
+    .modal-group-title.group {
+      background: rgba(0,113,227,0.06);
+      color: var(--accent);
+    }
+
+    /* 折叠箭头 */
+    .group-caret {
+      display: inline-block;
+      width: 14px;
+      font-size: 0.72rem;
+      color: var(--text-tertiary);
+      transition: transform 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      flex-shrink: 0;
+    }
+
+    .modal-group-title.group .group-caret { color: var(--accent); }
+    .modal-group.collapsed .group-caret { transform: rotate(-90deg); }
+    .modal-group.collapsed .group-body { display: none; }
+
+    /* 折叠动画容器 */
+    .group-body {
+      overflow: hidden;
+      max-height: 4000px;
+      opacity: 1;
+      transform: translateY(0);
+      transition: max-height 0.26s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                  opacity 0.22s ease,
+                  transform 0.22s ease;
+      will-change: max-height, opacity;
+    }
+
+    .modal-group.collapsed .group-body {
+      max-height: 0;
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+
+    /* 分组标题右侧操作按钮 */
+    .group-actions {
+      margin-left: auto;
+      display: inline-flex;
+      gap: 4px;
+    }
+
+    .group-actions .btn-icon {
+      width: 26px; height: 26px;
+      font-size: 0.78rem;
+      border-radius: 7px;
+      background: rgba(255,255,255,0.85);
+    }
+
+    .modal-group-title.group .group-actions .btn-icon {
+      background: rgba(255,255,255,0.9);
+    }
+
+    .topic-list { list-style: none; display: flex; flex-direction: column; gap: 5px; padding: 4px 2px 0; }
+
+    .group-empty-hint {
+      font-size: 0.78rem;
+      color: var(--text-tertiary);
+      padding: 6px 12px;
+      font-style: italic;
+    }
+
+    .topic-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0,0,0,0.02);
+      border: 1.5px solid rgba(0,0,0,0.05);
+      border-radius: 10px;
+      padding: 9px 12px;
+      transition: all 0.15s;
+    }
+
+    .topic-row:hover { background: rgba(0,113,227,0.04); border-color: rgba(0,113,227,0.12); }
+    .topic-row.active { border-color: rgba(0,113,227,0.3); background: rgba(0,113,227,0.06); }
+    .topic-row.selected { border-color: rgba(255,59,48,0.2); background: rgba(255,59,48,0.04); }
+
+    .topic-check { width: 16px; height: 16px; flex-shrink: 0; cursor: pointer; accent-color: var(--accent); }
+
+    .topic-text {
+      flex: 1;
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      text-align: left;
+      cursor: pointer;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
+    .topic-text:hover { color: var(--text-primary); }
+
+    .topic-edit-input {
+      flex: 1;
+      background: rgba(0,113,227,0.07);
+      border: 1.5px solid rgba(0,113,227,0.35);
+      border-radius: 6px;
+      color: var(--text-primary);
+      padding: 6px 8px;
+      font-size: 0.88rem;
+      outline: none;
+    }
+
+    .btn-icon {
+      background: rgba(0,0,0,0.05);
+      border: none;
+      color: var(--text-tertiary);
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-icon:hover { background: rgba(0,0,0,0.1); color: var(--text-primary); }
+    .btn-icon.save   { color: #34c759; }
+    .btn-icon.cancel { color: #ff3b30; }
+
+    /* ─── Toast ─── */
+    .toast {
+      position: fixed;
+      bottom: 36px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(29, 29, 31, 0.88);
+      color: #fff;
+      padding: 11px 24px;
+      border-radius: 12px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s, transform 0.3s;
+      z-index: 200;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      letter-spacing: 0.01em;
+    }
+
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ─── Responsive ─── */
+    /* ─── Responsive · 手机/平板 (≤768px) ─── */
+    @media (max-width: 768px) {
+      /* 全局：去掉 max-width 限制，让主体直接撑满 90% */
+      body {
+        padding: 0 5vw 40px;        /* 左右各 5vw，主体卡片占满 90vw */
+      }
+
+      .header { width: 90vw; padding: 18px 0 4px; }
+      .brand-title { font-size: 1.25rem; }
+      .brand-mark   { font-size: 1.15rem; }
+      .brand-tagline { font-size: 0.74rem; }
+
+      /* 主体卡片占满屏幕宽度 */
+      .card {
+        width: 90vw;
+        max-width: none;
+        border-radius: 20px;
+        box-shadow: 0 6px 24px rgba(0,0,0,0.06);
+      }
+
+      .card-section           { padding: 18px 18px 20px; }
+      .card-section.scope-section,
+      .card-section.duration-section { padding: 16px 18px 18px; }
+      .card-section.challenge-section { padding: 20px 18px 16px; }
+      .card-divider { margin: 0 14px; }
+
+      .section-label { font-size: 0.74rem; margin-bottom: 8px; }
+
+      /* 热区：略微缩小，保证一行 placeholder 不溢出 */
+      .slot-wrap {
+        padding: 24px 16px;
+        min-height: 160px;
+        margin: 4px 0 2px;
+      }
+      .slot-wrap .topic { font-size: clamp(1.4rem, 5.8vw, 2rem); }
+      .slot-wrap .topic.empty { font-size: 0.92rem; line-height: 1.55; }
+      .slot-cta { font-size: 0.65rem; padding: 3px 8px; top: 10px; right: 10px; }
+
+      /* 状态条 */
+      .status-strip { font-size: 0.78rem; padding: 7px 14px; }
+
+      /* 时长胶囊组：换行（flex-wrap），按钮可点击区域更大 */
+      .duration-presets {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: space-between;
+      }
+      .duration-chip {
+        flex: 1 1 calc(33% - 8px);   /* 一行 3 个，最少占 1/3 宽 */
+        min-width: 60px;
+        min-height: 40px;             /* 提升移动端可点击区域 */
+        padding: 9px 8px;
+        font-size: 0.82rem;
+        white-space: nowrap;
+      }
+
+      /* 自定义时间面板 */
+      .custom-duration-title { font-size: 0.78rem; }
+      .time-input { width: 48px; font-size: 1rem; }
+      .custom-duration-unit { font-size: 0.72rem; }
+      .btn-confirm-time { padding: 10px 18px; font-size: 0.85rem; }
+
+      /* 倒计时字号适当缩放 */
+      .timer-display { padding: 4px 0 2px; }
+      .timer { font-size: 3.4rem; letter-spacing: -0.02em; }
+      .timer-sub { font-size: 0.72rem; }
+
+      /* 主操作按钮：移动端大尺寸易点击 */
+      .btn-primary {
+        padding: 16px 22px;
+        font-size: 1.02rem;
+        min-height: 52px;            /* Apple 推荐 44pt 起步，给到 52 */
+        letter-spacing: 0.01em;
+      }
+      .btn-link { padding: 8px 14px; font-size: 0.85rem; min-height: 36px; }
+
+      /* scope 选择器 */
+      .scope-selector { padding: 8px 14px; font-size: 0.85rem; }
+      .scope-selector-icon { font-size: 0.95rem; }
+
+      /* 话题库按钮 */
+      .btn-library { padding: 7px 14px; font-size: 0.8rem; }
+
+      /* 底部签名 */
+      .footer-sign { width: 90vw; margin-top: 22px; }
+      .footer-mark { font-size: 0.7rem; letter-spacing: 0.06em; }
+      .footer-tagline { font-size: 0.72rem; }
+
+      /* 挑战记录占位 */
+      .challenge-record { width: 90vw; }
+    }
+
+    /* ─── Responsive · 小屏手机 (≤480px) ─── */
+    @media (max-width: 480px) {
+      body { padding: 0 4vw 32px; }
+      .header { width: 92vw; }
+      .card { width: 92vw; border-radius: 18px; }
+      .card-section { padding: 16px 14px 18px; }
+
+      .slot-wrap { min-height: 144px; padding: 20px 14px; }
+      .slot-wrap .topic { font-size: clamp(1.2rem, 6vw, 1.6rem); }
+      .slot-wrap .topic.empty { font-size: 0.86rem; }
+
+      .timer { font-size: 3rem; }
+
+      /* 超窄屏：时长胶囊一行 2 个 */
+      .duration-presets { gap: 6px; }
+      .duration-chip { flex: 1 1 calc(50% - 6px); }
+
+      .btn-primary { font-size: 0.98rem; min-height: 50px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-brand">
+      <span class="brand-mark">B.</span>
+      <div class="brand-wordmark">
+        <div class="brand-title">表达力<em>训练</em></div>
+        <p class="brand-tagline">今天，试着把一个问题讲清楚。</p>
+      </div>
+    </div>
+    <button class="btn-library" id="btnLibrary">话题库</button>
+  </div>
+
+  <div class="card" id="trainCard">
+    <!-- 区 1：当前训练范围 -->
+    <section class="card-section scope-section">
+      <span class="section-label">当前训练范围</span>
+      <div class="scope-selector-wrap">
+        <button class="scope-selector" id="scopePill" type="button">
+          <span class="scope-selector-icon">🎯</span>
+          <span class="scope-selector-text" id="scopePillText">全部挑战</span>
+          <span class="scope-selector-caret">▾</span>
+        </button>
+        <!-- 抽题范围下拉菜单：贴在选择器正下方、宽度匹配 -->
+        <div class="scope-menu" id="scopeMenu"></div>
+      </div>
+    </section>
+
+    <div class="card-divider"></div>
+
+    <!-- 区 2：当前挑战（核心交互热区） -->
+    <section class="card-section challenge-section">
+      <span class="section-label">当前挑战</span>
+      <span class="topic-tag" id="tag"></span>
+
+      <button class="slot-wrap slot-hotzone" id="slotWrap" type="button" aria-label="点击或按空格抽取今日挑战">
+        <div class="slot-layer visible" id="slotA"><div class="topic empty">点击此处或按下键盘 <kbd>Space</kbd> 抽取今日题目</div></div>
+        <div class="slot-layer" id="slotB"><div class="topic empty"></div></div>
+        <span class="slot-cta" id="slotCta">点击抽取</span>
+      </button>
+
+      <!-- 状态提示条 -->
+      <div class="status-strip" id="statusStrip" data-state="idle">
+        <span class="status-icon" id="statusIcon">💡</span>
+        <span class="status-text" id="statusText">提示：请先点击上方区域抽取题目</span>
+      </div>
+    </section>
+
+    <div class="card-divider"></div>
+
+    <!-- 区 3：训练时长 + 开始 -->
+    <section class="card-section duration-section">
+      <span class="section-label">训练时长</span>
+      <div class="duration-presets" id="durationPresets">
+        <button class="duration-chip" data-min="1" type="button">1分钟</button>
+        <button class="duration-chip" data-min="3" type="button">3分钟</button>
+        <button class="duration-chip" data-min="5" type="button">5分钟</button>
+        <button class="duration-chip" data-min="10" type="button">10分钟</button>
+        <button class="duration-chip" data-min="custom" id="durationCustomChip" type="button">自定义</button>
+      </div>
+      <div class="custom-duration" id="customDurationWrap">
+        <div class="custom-duration-title">自定义训练时间</div>
+        <div class="custom-duration-row">
+          <div class="custom-duration-field">
+            <input class="time-input" id="timeInputH" type="number" inputmode="numeric" min="0" max="99" value="00" aria-label="小时">
+            <span class="custom-duration-unit">小时</span>
+          </div>
+          <span class="time-sep">:</span>
+          <div class="custom-duration-field">
+            <input class="time-input" id="timeInputM" type="number" inputmode="numeric" min="0" max="59" value="05" aria-label="分钟">
+            <span class="custom-duration-unit">分钟</span>
+          </div>
+          <span class="time-sep">:</span>
+          <div class="custom-duration-field">
+            <input class="time-input" id="timeInputS" type="number" inputmode="numeric" min="0" max="59" value="00" aria-label="秒">
+            <span class="custom-duration-unit">秒</span>
+          </div>
+        </div>
+        <button class="btn-confirm-time" id="btnConfirmTime" type="button">确认时间</button>
+        <div class="custom-duration-error" id="customDurationError"></div>
+      </div>
+
+      <!-- 倒计时（运行/暂停时显示） -->
+      <div class="timer-display" id="timerDisplay">
+        <div class="timer" id="timer">03:00</div>
+        <div class="timer-sub" id="timerSub">倒计时</div>
+      </div>
+
+      <div class="progress-bar" id="progressBar">
+        <div class="progress-fill" id="progress"></div>
+      </div>
+
+      <!-- 主操作区 -->
+      <div class="primary-actions">
+        <button class="btn-primary" id="btnPlay" type="button">
+          <span class="btn-primary-icon">▶</span>
+          <span class="btn-primary-label" id="btnPlayLabel">开始吧</span>
+        </button>
+        <button class="btn-link" id="btnReset" type="button">
+          <span class="btn-link-icon">↺</span>
+          <span class="btn-link-label">重置</span>
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <!-- 挑战记录预留区域（未来扩展用，当前隐藏） -->
+  <div class="challenge-record" id="challengeRecord" style="display:none">
+    <!-- 未来可扩展：连续挑战天数、累计完成次数、最近挑战等 -->
+  </div>
+
+  <!-- 底部 Ben 签名 -->
+  <div class="footer-sign">
+    <div class="footer-divider"></div>
+    <div class="footer-brand">
+      <span class="footer-mark">B. Challenge</span>
+      <p class="footer-tagline">把脑子里的东西，试着讲出来。</p>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>挑战库管理</h2>
+        <button class="modal-close" id="modalClose">×</button>
+      </div>
+      <div class="modal-toolbar">
+        <div class="toolbar-row">
+          <label class="select-all-label">
+            <input type="checkbox" id="selectAll"> 全选
+          </label>
+          <button class="btn-sm btn-danger" id="btnDeleteSelected" disabled>删除选中</button>
+          <button class="btn-sm btn-ghost" id="btnMoveSelected" disabled>移动到分组</button>
+          <label class="btn-upload">
+            上传文件
+            <input type="file" id="fileUpload" accept=".txt,.json,.csv" hidden>
+          </label>
+          <button class="btn-sm btn-add" id="btnNewGroup">＋ 新建分组</button>
+          <span class="modal-count" id="modalCount"></span>
+        </div>
+        <div class="toolbar-row">
+          <input class="field-input" id="newTopicInput" type="text" placeholder="新增挑战内容…">
+          <select class="field-select" id="newTopicGroup" style="display:none;"></select>
+          <button class="btn-sm btn-add" id="btnAddTopic">添加</button>
+        </div>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- 分组输入弹窗（新建 / 重命名 共用） -->
+  <div class="modal-overlay" id="groupModal">
+    <div class="modal mini-modal">
+      <div class="modal-header">
+        <h2 id="groupModalTitle">新建分组</h2>
+        <button class="modal-close" id="groupModalClose">×</button>
+      </div>
+      <div class="modal-toolbar" style="border-bottom:none;">
+        <div class="toolbar-row">
+          <input class="field-input" id="groupNameInput" type="text" placeholder="请输入分组名称" maxlength="24">
+        </div>
+        <div class="toolbar-row" style="justify-content:flex-end;">
+          <button class="btn-sm btn-upload" id="groupModalCancel">取消</button>
+          <button class="btn-sm btn-add" id="groupModalConfirm">创建</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 上传题目时选择分组的弹窗 -->
+  <div class="modal-overlay" id="uploadGroupModal">
+    <div class="modal mini-modal">
+      <div class="modal-header">
+        <h2>上传到哪个分组？</h2>
+        <button class="modal-close" id="uploadGroupModalClose">×</button>
+      </div>
+      <div class="modal-toolbar" style="border-bottom:none;">
+        <div class="toolbar-row">
+          <select class="field-select" id="uploadGroupSelect" style="flex:1;"></select>
+        </div>
+        <div class="toolbar-row" style="justify-content:flex-end;">
+          <button class="btn-sm btn-upload" id="uploadGroupCancel">取消</button>
+          <button class="btn-sm btn-add" id="uploadGroupConfirm">确认导入</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 移动话题到分组的弹窗 -->
+  <div class="modal-overlay" id="moveGroupModal">
+    <div class="modal mini-modal">
+      <div class="modal-header">
+        <h2>移动到分组</h2>
+        <button class="modal-close" id="moveGroupModalClose">×</button>
+      </div>
+      <div class="modal-toolbar" style="border-bottom:none;">
+        <div class="toolbar-row">
+          <select class="field-select" id="moveGroupSelect" style="flex:1;"></select>
+        </div>
+        <div class="toolbar-row" style="justify-content:flex-end;">
+          <button class="btn-sm btn-upload" id="moveGroupCancel">取消</button>
+          <button class="btn-sm btn-add" id="moveGroupConfirm">确认移动</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ─── Constants ─── */
+    const STORAGE_KEY      = "talk-tool-topics";
+    const GROUP_STORAGE_KEY = "talk-tool-groups";
+    const TIME_KEY         = "talk-tool-duration";
+    const MIGRATION_FLAG   = "talk-tool-migrated-v2";
+    const SCOPE_KEY        = "talk-tool-training-scope";      // 抽题范围
+    const COLLAPSE_KEY     = "talk-tool-group-collapse";      // 分组折叠状态
+
+    /* 注：旧版本使用 cat: "social"/"couple"/"speech"。
+       新版本全部归入 groupId: null（未分组），由 migrateOldTopics() 兜底迁移 */
+    const DEFAULT_TOPICS = [
+      { text: "介绍一下你自己", groupId: null },
+      { text: "你为什么想加入我们公司？", groupId: null },
+      { text: "描述一次你解决复杂问题的经历", groupId: null },
+      { text: "你的优点和缺点是什么？", groupId: null },
+      { text: "你如何处理工作中的压力？", groupId: null },
+      { text: "你五年后的职业规划是什么？", groupId: null },
+      { text: "描述一次团队合作的经历", groupId: null },
+      { text: "你如何处理与同事的冲突？", groupId: null },
+      { text: "你最大的成就是什么？", groupId: null },
+      { text: "你为什么离开上一家公司？", groupId: null },
+      { text: "你期望的薪资是多少？", groupId: null },
+      { text: "你如何看待加班？", groupId: null },
+      { text: "描述一次你失败的经历及从中学会了什么", groupId: null },
+      { text: "你最近在学习什么新技能？", groupId: null },
+      { text: "你如何看待远程工作？", groupId: null },
+      { text: "如果领导给你不合理的任务，你会怎么办？", groupId: null },
+      { text: "你对我们公司了解多少？", groupId: null },
+      { text: "你还有什么问题想问我们？", groupId: null },
+      { text: "描述一次你在 deadline 前完成任务的经历", groupId: null },
+      { text: "你认为什么是好的领导力？", groupId: null },
+      { text: "最近有什么新鲜事想分享？", groupId: null },
+      { text: "你周末一般做什么？", groupId: null },
+      { text: "你平时有什么爱好？", groupId: null },
+      { text: "你最近在看什么剧或综艺？", groupId: null },
+      { text: "你推荐一家好吃的餐厅", groupId: null },
+      { text: "你最近去过哪里玩？", groupId: null },
+      { text: "你对某个热点新闻怎么看？", groupId: null },
+      { text: "你平时怎么放松自己？", groupId: null },
+      { text: "你养宠物吗？或者想养什么？", groupId: null },
+      { text: "你最近在读什么书？", groupId: null },
+      { text: "你觉得这座城市有什么好玩的地方？", groupId: null },
+      { text: "你平时运动吗？喜欢什么运动？", groupId: null },
+      { text: "你最近有什么小目标？", groupId: null },
+      { text: "如果可以免费旅行，你最想去哪里？", groupId: null },
+      { text: "你小时候的梦想是什么？", groupId: null },
+      { text: "你最近发现的一个生活小技巧", groupId: null },
+      { text: "你如何看待社交媒体对生活的影响？", groupId: null },
+      { text: "你最喜欢的一个节日及原因", groupId: null },
+      { text: "如果可以和一个历史人物共进晚餐，你选谁？", groupId: null },
+      { text: "你最近有什么让你开心的小事？", groupId: null },
+      { text: "你最喜欢对方哪一点？", groupId: null },
+      { text: "我们的第一次约会你还记得吗？", groupId: null },
+      { text: "你觉得理想的恋爱关系是什么样的？", groupId: null },
+      { text: "我们之间最让你感动的一件事", groupId: null },
+      { text: "你希望我们一起完成的一件事", groupId: null },
+      { text: "你什么时候觉得最幸福？", groupId: null },
+      { text: "你觉得沟通在恋爱中有多重要？", groupId: null },
+      { text: "你理想中的约会是怎样的？", groupId: null },
+      { text: "你觉得我们最需要改进的地方是什么？", groupId: null },
+      { text: "你第一次心动是什么时候？", groupId: null },
+      { text: "你希望对方怎么表达爱意？", groupId: null },
+      { text: "我们一起度过的最难忘的一天", groupId: null },
+      { text: "如果要给这段感情打几分，你会打多少？", groupId: null },
+      { text: "你觉得异地恋能长久吗？为什么？", groupId: null },
+      { text: "你对我们未来的生活有什么想象？", groupId: null },
+      { text: "你觉得吵架后最好的和解方式是什么？", groupId: null },
+      { text: "你最想和对方一起尝试的一件事", groupId: null },
+      { text: "你觉得两个人在一起最重要的是什么？", groupId: null },
+      { text: "你会如何向朋友介绍你的另一半？", groupId: null },
+      { text: "说一件你偷偷为对方做过的事", groupId: null },
+      { text: "谈谈你对人工智能的看法", groupId: null },
+      { text: "如果让你做三分钟自我介绍", groupId: null },
+      { text: "描述一个你敬佩的人", groupId: null },
+      { text: "什么是真正的勇气？", groupId: null },
+      { text: "分享一个改变你人生观的经历", groupId: null },
+      { text: "你如何定义领导力？", groupId: null },
+      { text: "谈谈环保与可持续发展", groupId: null },
+      { text: "描述你的家乡", groupId: null },
+      { text: "什么是你心中最重要的价值观？", groupId: null },
+      { text: "分享一本影响你的书", groupId: null },
+      { text: "你如何看待失败与成长？", groupId: null },
+      { text: "如果让你激励一群人，你会说什么？", groupId: null },
+      { text: "谈谈科技与人文的关系", groupId: null },
+      { text: "描述一次你走出舒适区的经历", groupId: null },
+      { text: "你对未来的世界有什么期待？", groupId: null },
+      { text: "你认为什么是成功？", groupId: null },
+      { text: "谈谈你对教育的看法", groupId: null },
+      { text: "如果时间可以倒流，你想改变什么？", groupId: null },
+      { text: "描述一次让你印象深刻的演讲", groupId: null },
+      { text: "你认为年轻人面临的最大挑战是什么？", groupId: null }
+    ];
+
+    /* ─── DOM refs ─── */
+    const trainCard        = document.getElementById("trainCard");
+    const tagEl            = document.getElementById("tag");
+    const timerEl          = document.getElementById("timer");
+    const timerSub         = document.getElementById("timerSub");
+    const progressEl       = document.getElementById("progress");
+    const progressBar      = document.getElementById("progressBar");
+    const slotWrap         = document.getElementById("slotWrap");
+    const slotCta          = document.getElementById("slotCta");
+    const statusIcon       = document.getElementById("statusIcon");
+    const btnPlay          = document.getElementById("btnPlay");
+    const btnPlayLabel     = document.getElementById("btnPlayLabel");
+    const btnReset         = document.getElementById("btnReset");
+    const timeInputH       = document.getElementById("timeInputH");
+    const timeInputM       = document.getElementById("timeInputM");
+    const timeInputS       = document.getElementById("timeInputS");
+    const btnConfirmTime   = document.getElementById("btnConfirmTime");
+    const customDurationError = document.getElementById("customDurationError");
+    const customDurationWrap = document.getElementById("customDurationWrap");
+    const durationPresets  = document.getElementById("durationPresets");
+    const durationCustomChip = document.getElementById("durationCustomChip");
+    const statusStrip      = document.getElementById("statusStrip");
+    const statusText       = document.getElementById("statusText");
+    const timerDisplay     = document.getElementById("timerDisplay");
+    const btnLibrary       = document.getElementById("btnLibrary");
+    const scopePill        = document.getElementById("scopePill");
+    const scopePillText    = document.getElementById("scopePillText");
+    const scopeMenu        = document.getElementById("scopeMenu");
+    const modal       = document.getElementById("modal");
+    const modalBody   = document.getElementById("modalBody");
+    const modalClose  = document.getElementById("modalClose");
+    const modalCount  = document.getElementById("modalCount");
+    const selectAllEl = document.getElementById("selectAll");
+    const btnDelSel   = document.getElementById("btnDeleteSelected");
+    const btnMoveSel  = document.getElementById("btnMoveSelected");
+    const btnNewGroup = document.getElementById("btnNewGroup");
+    const fileUpload  = document.getElementById("fileUpload");
+    const newTopicIn  = document.getElementById("newTopicInput");
+    const newTopicGroup = document.getElementById("newTopicGroup");
+    const btnAddTopic = document.getElementById("btnAddTopic");
+    const toastEl     = document.getElementById("toast");
+
+    /* 分组输入弹窗 */
+    const groupModal        = document.getElementById("groupModal");
+    const groupModalTitle   = document.getElementById("groupModalTitle");
+    const groupNameInput    = document.getElementById("groupNameInput");
+    const groupModalClose   = document.getElementById("groupModalClose");
+    const groupModalCancel  = document.getElementById("groupModalCancel");
+    const groupModalConfirm = document.getElementById("groupModalConfirm");
+
+    /* 上传分组选择弹窗 */
+    const uploadGroupModal       = document.getElementById("uploadGroupModal");
+    const uploadGroupSelect      = document.getElementById("uploadGroupSelect");
+    const uploadGroupModalClose  = document.getElementById("uploadGroupModalClose");
+    const uploadGroupCancel      = document.getElementById("uploadGroupCancel");
+    const uploadGroupConfirm     = document.getElementById("uploadGroupConfirm");
+
+    /* 移动话题到分组弹窗 */
+    const moveGroupModal     = document.getElementById("moveGroupModal");
+    const moveGroupSelect    = document.getElementById("moveGroupSelect");
+    const moveGroupModalClose= document.getElementById("moveGroupModalClose");
+    const moveGroupCancel    = document.getElementById("moveGroupCancel");
+    const moveGroupConfirm   = document.getElementById("moveGroupConfirm");
+
+    /* ─── State ─── */
+    let topics = [];
+    let groups = [];           // [{ id, name }]
+    let interval = null;
+    let totalSeconds = 180;
+    let remaining = 180;
+    let lastTopicId = null;
+    let currentTopicId = null;
+    let selectedIds = new Set();
+    let editingId = null;
+    let timerState = "idle";
+    let audioCtx = null;
+
+    /* 分组弹窗的工作模式：'create' | 'rename' */
+    let groupModalMode = 'create';
+    let groupModalTargetId = null;
+
+    /* 待执行的上传 / 移动操作暂存 */
+    let pendingUploadItems = null;       // [{ text }]
+    let pendingUploadExt = null;         // 文件后缀
+    let pendingMoveIds = null;           // Set<topicId>
+
+    /* 抽题范围状态：{ type: 'all' | 'ungrouped' | 'group', groupId?: string } */
+    let trainingScope = { type: 'all' };
+
+    /* 分组折叠状态：{ [scopeKey]: boolean }  true=折叠 */
+    let groupCollapseMap = {};
+
+    /* ─── Audio · 预热 + 柔和音 ─── */
+    let audioReady = false;
+
+    function getAudioCtx() {
+      if (!audioCtx) {
+        try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) {}
+      }
+      return audioCtx;
+    }
+
+    /**
+     * 用户首次手势后预热 AudioContext + 静音播放一段
+     * 后续音效可零延迟触发，避免首次卡顿
+     */
+    function warmUpAudio() {
+      const ctx = getAudioCtx();
+      if (!ctx || audioReady) return;
+      try {
+        if (ctx.state === 'suspended') ctx.resume();
+        // 静音 warm-up：构造一个极短、几乎听不见的 oscillator
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.value = 220;
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.01);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.02);
+        audioReady = true;
+      } catch (_) {}
+    }
+
+    // 任何用户手势都触发一次预热
+    ['touchstart', 'mousedown', 'keydown'].forEach(function (evt) {
+      window.addEventListener(evt, warmUpAudio, { once: true, passive: true });
+    });
+
+    /**
+     * 柔和敲击音：木质 tock，三角波 380→120 Hz
+     * 限频：高频段音量降到 60% 避免刺耳
+     */
+    function playClick(vol = 0.16, pitchScale = 1) {
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      try {
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(380 * pitchScale, now);
+        osc.frequency.exponentialRampToValueAtTime(120 * pitchScale, now + 0.06);
+        gain.gain.setValueAtTime(vol, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+        osc.start(now);
+        osc.stop(now + 0.1);
+      } catch (_) {}
+    }
+
+    /**
+     * 揭晓音：柔和的 "pop"
+     *   - 一个 350 → 180 Hz 的快速滑落三角波
+     *   - 短促包络（80ms），音量克制
+     */
+    function playRevealSound() {
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      try {
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(440, now);
+        osc.frequency.exponentialRampToValueAtTime(220, now + 0.18);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.16, now + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+        osc.start(now);
+        osc.stop(now + 0.35);
+      } catch (_) {}
+    }
+
+    /**
+     * 开箱音：钟声和弦 C-E-G + 轻微谐波，不刺耳
+     */
+    function playOpenSound() {
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      try {
+        const now = ctx.currentTime;
+        // 主音：C-E-G 大三和弦
+        [261.63, 329.63, 392.00].forEach(function (freq, i) {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0, now + i * 0.08);
+          gain.gain.linearRampToValueAtTime(0.18, now + i * 0.08 + 0.03);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.5);
+          osc.start(now + i * 0.08);
+          osc.stop(now + i * 0.08 + 0.55);
+        });
+        // 高谐波（音量低），增加钟质感
+        [523.25, 659.25].forEach(function (freq, i) {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0, now + 0.06 + i * 0.08);
+          gain.gain.linearRampToValueAtTime(0.06, now + 0.06 + i * 0.08 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06 + i * 0.08 + 0.28);
+          osc.start(now + 0.06 + i * 0.08);
+          osc.stop(now + 0.06 + i * 0.08 + 0.32);
+        });
+      } catch (_) {}
+    }
+
+    /**
+     * 计时结束音：柔和双音 C-G
+     */
+    function playBeep() {
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      try {
+        const now = ctx.currentTime;
+        [523.25, 783.99].forEach(function (freq, i) {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0, now + i * 0.22);
+          gain.gain.linearRampToValueAtTime(0.18, now + i * 0.22 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.22 + 0.42);
+          osc.start(now + i * 0.22);
+          osc.stop(now + i * 0.22 + 0.45);
+        });
+      } catch (_) {}
+    }
+
+    /* ─── Helpers ─── */
+    function generateId() {
+      return "t_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    }
+
+    function loadTopics() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const p = JSON.parse(saved);
+          if (Array.isArray(p) && p.length > 0) return p;
+        } catch (_) {}
+      }
+      const seeded = DEFAULT_TOPICS.map((t, i) => ({ id: "d" + i, ...t }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded));
+      return seeded;
+    }
+
+    function saveTopics() { localStorage.setItem(STORAGE_KEY, JSON.stringify(topics)); }
+
+    function loadDuration() {
+      const s = localStorage.getItem(TIME_KEY);
+      const n = parseInt(s, 10);
+      if (s == null || isNaN(n) || n < 1) return 180; // 默认 3 分钟 = 180 秒
+      // 旧版本以"分钟"存储（1~99）；新版本以"秒"存储（>= 1）。
+      // 兼容策略：以 99（含）作为分钟上限判定：原值 ≤ 99 且在没有明显"秒特征"时，按分钟换算。
+      // 由于新版本可能存 30秒 / 90秒 / 3600秒 等，30 也会被误判为 30 分钟。
+      // 这里采用一次性迁移：若值 ≤ 99，认为是旧版分钟数；若 > 99，认为是新版秒数。
+      if (n <= 99) return n * 60;
+      if (n <= 6000) return n;        // 100~6000 秒：直接当作秒数（新格式）
+      return 180;                    // 异常容错
+    }
+
+    function saveDuration(sec) {
+      try { localStorage.setItem(TIME_KEY, String(sec)); } catch (_) {}
+    }
+
+    /* ─── Groups · 自定义分组系统 ─── */
+
+    /** 安全读取 LocalStorage 的 JSON */
+    function safeParse(raw, fallback) {
+      if (raw == null) return fallback;
+      try { return JSON.parse(raw); } catch (_) { return fallback; }
+    }
+
+    function safeGet(key, fallback) {
+      try { return safeParse(localStorage.getItem(key), fallback); }
+      catch (_) { return fallback; }
+    }
+
+    function safeSet(key, value) {
+      try { localStorage.setItem(key, JSON.stringify(value)); return true; }
+      catch (_) { return false; }
+    }
+
+    /** 生成分组唯一 id */
+    function generateGroupId() {
+      return 'g_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    }
+
+    /** 读取分组列表（保证是数组且元素结构合法） */
+    function loadGroups() {
+      const raw = safeGet(GROUP_STORAGE_KEY, []);
+      if (!Array.isArray(raw)) return [];
+      return raw
+        .filter(function (g) { return g && typeof g.id === 'string' && typeof g.name === 'string'; })
+        .map(function (g) { return { id: g.id, name: g.name }; });
+    }
+
+    function saveGroups() { safeSet(GROUP_STORAGE_KEY, groups); }
+
+    /** 分组重名校验（忽略自己） */
+    function isGroupNameTaken(name, exceptId) {
+      const trimmed = String(name || '').trim();
+      return groups.some(function (g) {
+        return g.name === trimmed && g.id !== exceptId;
+      });
+    }
+
+    /** 创建分组 */
+    function createGroup(name) {
+      const trimmed = String(name || '').trim();
+      if (!trimmed) return { ok: false, msg: '分组名称不能为空' };
+      if (isGroupNameTaken(trimmed)) return { ok: false, msg: '已存在同名分组' };
+      const g = { id: generateGroupId(), name: trimmed };
+      groups.push(g);
+      saveGroups();
+      // 同步主页面抽题范围显示
+      renderScopePill();
+      return { ok: true, group: g };
+    }
+
+    /** 重命名分组 */
+    function renameGroup(id, newName) {
+      const trimmed = String(newName || '').trim();
+      if (!trimmed) return { ok: false, msg: '分组名称不能为空' };
+      const g = groups.find(function (x) { return x.id === id; });
+      if (!g) return { ok: false, msg: '分组不存在' };
+      if (isGroupNameTaken(trimmed, id)) return { ok: false, msg: '已存在同名分组' };
+      g.name = trimmed;
+      saveGroups();
+      // 同步主页面抽题范围显示
+      renderScopePill();
+      return { ok: true };
+    }
+
+    /**
+     * 删除分组：该分组内的所有话题 groupId = null（自动进入未分组）
+     * 分组本身被移除；话题不会被删除。
+     */
+    function deleteGroup(id) {
+      const idx = groups.findIndex(function (g) { return g.id === id; });
+      if (idx < 0) return { ok: false, msg: '分组不存在' };
+      const removedName = groups[idx].name;
+      groups.splice(idx, 1);
+      saveGroups();
+
+      let moved = 0;
+      topics.forEach(function (t) {
+        if (t && t.groupId === id) {
+          t.groupId = null;
+          moved++;
+        }
+      });
+      if (moved > 0) saveTopics();
+
+      // 同步删除折叠状态
+      removeCollapse({ kind: 'group', groupId: id });
+
+      // 同步主页面抽题范围：如果正选中这个被删除的分组，则回退到全部挑战
+      if (trainingScope.type === 'group' && trainingScope.groupId === id) {
+        setTrainingScope({ type: 'all' });
+      }
+
+      return { ok: true, movedCount: moved, removedName: removedName };
+    }
+
+    /** 把一组话题移动到指定分组（groupId === null 表示未分组） */
+    function moveTopicsToGroup(topicIds, groupId) {
+      const ids = topicIds instanceof Set ? topicIds : new Set(topicIds);
+      if (!ids.size) return { ok: false, count: 0 };
+      let count = 0;
+      topics.forEach(function (t) {
+        if (ids.has(t.id)) {
+          t.groupId = groupId || null;
+          count++;
+        }
+      });
+      if (count > 0) saveTopics();
+      return { ok: true, count: count };
+    }
+
+    /** 获取话题所属分组的展示名（用于卡片 tag） */
+    function getTopicGroupLabel(item) {
+      if (!item) return '';
+      if (item.groupId == null) return '未分组';
+      const g = groups.find(function (x) { return x.id === item.groupId; });
+      return g ? g.name : '未分组';
+    }
+
+    /**
+     * 迁移旧话题：把 cat 字段全部改为 groupId: null，并写回 LocalStorage。
+     * 通过 MIGRATION_FLAG 保证只执行一次。
+     */
+    function migrateOldTopics() {
+      try {
+        if (localStorage.getItem(MIGRATION_FLAG) === '1') return;
+
+        // 1) 迁移话题
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = safeParse(raw, null);
+          if (Array.isArray(parsed)) {
+            let changed = false;
+            parsed.forEach(function (t) {
+              if (!t || typeof t.text !== 'string') return;
+              if (Object.prototype.hasOwnProperty.call(t, 'cat')) {
+                delete t.cat;
+                changed = true;
+              }
+              if (!('groupId' in t)) {
+                t.groupId = null;
+                changed = true;
+              }
+            });
+            if (changed) safeSet(STORAGE_KEY, parsed);
+          }
+        }
+
+        // 2) 初始化分组容器（如果还没有）
+        if (!localStorage.getItem(GROUP_STORAGE_KEY)) {
+          safeSet(GROUP_STORAGE_KEY, []);
+        }
+
+        localStorage.setItem(MIGRATION_FLAG, '1');
+      } catch (e) { console.warn('[migrate] failed', e); }
+    }
+
+    /* ─── Training Scope（抽题范围） ─── */
+
+    /** 默认值 */
+    function defaultScope() { return { type: 'all' }; }
+
+    function loadTrainingScope() {
+      const obj = safeGet(SCOPE_KEY, null);
+      if (!obj || typeof obj !== 'object') return defaultScope();
+      if (obj.type === 'all' || obj.type === 'ungrouped') return { type: obj.type };
+      if (obj.type === 'group' && typeof obj.groupId === 'string') return { type: 'group', groupId: obj.groupId };
+      return defaultScope();
+    }
+
+    function saveTrainingScope() {
+      safeSet(SCOPE_KEY, trainingScope);
+    }
+
+    /** 校验并修正 scope（删除分组时调用） */
+    function validateScope() {
+      if (trainingScope.type === 'group') {
+        const exists = groups.some(function (g) { return g.id === trainingScope.groupId; });
+        if (!exists) {
+          trainingScope = defaultScope();
+          saveTrainingScope();
+        }
+      }
+    }
+
+    /** 根据当前 scope 得到候选话题数组 */
+    function getScopedTopics() {
+      if (trainingScope.type === 'ungrouped') {
+        return topics.filter(function (t) { return t && t.groupId == null; });
+      }
+      if (trainingScope.type === 'group') {
+        return topics.filter(function (t) { return t && t.groupId === trainingScope.groupId; });
+      }
+      // 'all'
+      return topics.slice();
+    }
+
+    /** scope 显示名 */
+    function getScopeLabel() {
+      if (trainingScope.type === 'ungrouped') return '未分组';
+      if (trainingScope.type === 'group') {
+        const g = groups.find(function (x) { return x.id === trainingScope.groupId; });
+        return g ? g.name : '全部挑战';
+      }
+      return '全部挑战';
+    }
+
+    function setTrainingScope(next) {
+      trainingScope = next;
+      saveTrainingScope();
+      renderScopePill();
+      renderScopeMenu();
+    }
+
+    function renderScopePill() {
+      scopePillText.textContent = getScopeLabel();
+    }
+
+    function buildScopeMenuItems() {
+      const items = [];
+
+      // 1) 全部挑战（始终在最上）
+      items.push({
+        key: 'all',
+        type: 'all',
+        name: '全部挑战',
+        count: topics.length
+      });
+
+      items.push({ type: 'separator' });
+
+      // 2) 未分组
+      const ungroupedCount = topics.filter(function (t) { return t && t.groupId == null; }).length;
+      items.push({
+        key: 'ungrouped',
+        type: 'ungrouped',
+        name: '未分组',
+        count: ungroupedCount
+      });
+
+      if (groups.length) items.push({ type: 'separator' });
+
+      // 3) 用户自定义分组
+      groups.forEach(function (g) {
+        const c = topics.filter(function (t) { return t && t.groupId === g.id; }).length;
+        items.push({
+          key: 'g:' + g.id,
+          type: 'group',
+          groupId: g.id,
+          name: g.name,
+          count: c
+        });
+      });
+
+      if (!groups.length && !ungroupedCount) {
+        items.push({ type: 'empty', name: '暂无挑战' });
+      }
+      return items;
+    }
+
+    function renderScopeMenu() {
+      const items = buildScopeMenuItems();
+      scopeMenu.innerHTML = '';
+      let activeKey = trainingScope.type;
+      if (trainingScope.type === 'group') activeKey = 'g:' + trainingScope.groupId;
+
+      items.forEach(function (it) {
+        if (it.type === 'separator') {
+          const s = document.createElement('div');
+          s.className = 'scope-separator';
+          scopeMenu.appendChild(s);
+          return;
+        }
+        if (it.type === 'empty') {
+          const e = document.createElement('div');
+          e.className = 'scope-empty';
+          e.textContent = it.name;
+          scopeMenu.appendChild(e);
+          return;
+        }
+        const row = document.createElement('div');
+        row.className = 'scope-item';
+        row.dataset.key = it.key;
+        const myKey = it.type === 'group' ? 'g:' + it.groupId : it.type;
+        if (myKey === activeKey) row.classList.add('active');
+        const check = document.createElement('span');
+        check.className = 'scope-check';
+        check.textContent = myKey === activeKey ? '✓' : '';
+        const name = document.createElement('span');
+        name.className = 'scope-name';
+        name.textContent = it.name;
+        const cnt = document.createElement('span');
+        cnt.className = 'scope-count';
+        cnt.textContent = String(it.count);
+        row.append(check, name, cnt);
+        row.addEventListener('click', function () {
+          if (it.type === 'all')         setTrainingScope({ type: 'all' });
+          else if (it.type === 'ungrouped') setTrainingScope({ type: 'ungrouped' });
+          else if (it.type === 'group')     setTrainingScope({ type: 'group', groupId: it.groupId });
+          closeScopeMenu();
+        });
+        scopeMenu.appendChild(row);
+      });
+    }
+
+    function openScopeMenu() {
+      renderScopeMenu();
+      scopeMenu.classList.add('open');
+      scopePill.classList.add('open');
+    }
+
+    function closeScopeMenu() {
+      scopeMenu.classList.remove('open');
+      scopePill.classList.remove('open');
+    }
+
+    function toggleScopeMenu() {
+      if (scopeMenu.classList.contains('open')) closeScopeMenu();
+      else openScopeMenu();
+    }
+
+    /* ─── Group Collapse（分组折叠） ─── */
+
+    function scopeKeyOf(section) {
+      // section = { kind: 'ungrouped' } | { kind: 'group', groupId: '...' }
+      return section.kind === 'group' ? ('g:' + section.groupId) : section.kind;
+    }
+
+    function loadCollapseMap() {
+      const obj = safeGet(COLLAPSE_KEY, {});
+      return (obj && typeof obj === 'object') ? obj : {};
+    }
+
+    function saveCollapseMap() { safeSet(COLLAPSE_KEY, groupCollapseMap); }
+
+    function isCollapsed(section) {
+      return !!groupCollapseMap[scopeKeyOf(section)];
+    }
+
+    function setCollapsed(section, val) {
+      const k = scopeKeyOf(section);
+      if (val) groupCollapseMap[k] = true;
+      else delete groupCollapseMap[k];
+      saveCollapseMap();
+    }
+
+    function removeCollapse(section) {
+      const k = scopeKeyOf(section);
+      if (k in groupCollapseMap) {
+        delete groupCollapseMap[k];
+        saveCollapseMap();
+      }
+    }
+
+    function showToast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add("show");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => toastEl.classList.remove("show"), 2400);
+    }
+
+    function formatTime(sec) {
+      sec = Math.max(0, Math.floor(sec));
+      if (sec >= 3600) {
+        const h = Math.floor(sec / 3600);
+        const m = Math.floor((sec % 3600) / 60);
+        const s = sec % 60;
+        return (
+          String(h).padStart(2, "0") + ":" +
+          String(m).padStart(2, "0") + ":" +
+          String(s).padStart(2, "0")
+        );
+      }
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+    }
+
+    function pickTopic() {
+      // 优先从当前抽题范围的候选池中选
+      const pool = slotPool && slotPool.length ? slotPool : getScopedTopics();
+      if (!pool.length) return null;
+      let pick;
+      do {
+        pick = pool[Math.floor(Math.random() * pool.length)];
+      } while (pick && pick.id === lastTopicId && pool.length > 1);
+      lastTopicId = pick.id;
+      return pick;
+    }
+
+    function showTopic(item) {
+      if (!item) return;
+      currentTopicId = item.id;
+      lastTopicId = item.id;
+
+      // 强制写入 A 层
+      const topicA = document.querySelector('#slotA .topic');
+      if (topicA) {
+        topicA.textContent = item.text;
+        topicA.classList.remove("empty", "blur", "ghost");
+      }
+
+      // 标签：仅在已选定分组时显示
+      const showTag = trainingScope.type !== 'all';
+      if (showTag) {
+        const label = getTopicGroupLabel(item);
+        tagEl.textContent = label;
+        tagEl.className = "topic-tag show " + (item.groupId == null ? "ungrouped" : "group");
+      } else {
+        tagEl.classList.remove('show');
+      }
+
+      // 同步 slot 双层结构，复位到 A 层
+      try {
+        const slotA = document.getElementById('slotA');
+        const slotB = document.getElementById('slotB');
+        if (slotA) slotA.classList.add('visible');
+        if (slotB) {
+          slotB.classList.remove('visible');
+          const topicB = slotB.querySelector('.topic');
+          if (topicB) topicB.textContent = '';
+        }
+        slotCurrentLayer = 'A';
+      } catch (_) {}
+
+      if (modal.classList.contains("open")) renderModalList();
+      syncUiState();
+    }
+
+    /* ─── Timer ─── */
+    function onTimerDone() {
+      timerState = "done";
+      timerEl.classList.add("done");
+      timerEl.classList.remove("inactive", "running");
+      progressEl.classList.add("done");
+      playBeep();
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification("B. Challenge", { body: "时间到！完成了一次挑战" });
+      }
+      updateControls();
+      syncUiState();
+    }
+
+    function stopTimer() {
+      if (interval) { clearInterval(interval); interval = null; }
+    }
+
+    /**
+     * 根据当前 timerState / currentTopicId 同步主 UI：
+     *   - 主按钮文字
+     *   - 状态条
+     *   - 计时器可见度
+     *   - 卡片高亮
+     *   - 抽题按钮文字
+     */
+    function updateControls() {
+      const running = timerState === "running";
+      const paused  = timerState === "paused";
+      const done    = timerState === "done";
+      const idle    = timerState === "idle";
+
+      // 主按钮文字
+      if (running) {
+        btnPlay.querySelector('.btn-primary-icon').textContent = '⏸';
+      if (btnPlayLabel) btnPlayLabel.textContent = '暂停';
+      btnPlay.dataset.mode = 'pause';
+    } else if (paused) {
+      btnPlay.querySelector('.btn-primary-icon').textContent = '▶';
+      if (btnPlayLabel) btnPlayLabel.textContent = '继续';
+      btnPlay.dataset.mode = 'resume';
+    } else if (done) {
+      btnPlay.querySelector('.btn-primary-icon').textContent = '🔁';
+      if (btnPlayLabel) btnPlayLabel.textContent = '再来一次';
+      btnPlay.dataset.mode = 'restart';
+    } else {
+      btnPlay.querySelector('.btn-primary-icon').textContent = '▶';
+      if (btnPlayLabel) btnPlayLabel.textContent = '开始吧';
+        btnPlay.dataset.mode = 'start';
+      }
+
+      // 时间输入禁用（运行/暂停时不允许改）
+      syncCustomDurationLock();
+
+      // 重置按钮 dimmed
+      btnReset.classList.toggle('dimmed', idle || done);
+
+      // 计时器状态色
+      timerEl.classList.toggle('running', running);
+    }
+
+    function startTimer() {
+      stopTimer();
+      timerState = "running";
+      progressEl.className = "progress-fill";
+      progressEl.style.width = "0%";
+      updateControls();
+      interval = setInterval(() => {
+        remaining--;
+        timerEl.textContent = formatTime(remaining);
+        const pct = (totalSeconds - remaining) / totalSeconds * 100;
+        progressEl.style.width = pct + "%";
+        if (pct > 80) progressEl.classList.add("almost");
+        if (remaining <= 0) { stopTimer(); onTimerDone(); }
+      }, 1000);
+    }
+
+    function pauseTimer() { stopTimer(); timerState = "paused"; updateControls(); syncUiState(); }
+
+    function resetTimer() {
+      stopTimer();
+      timerState = "idle";
+      remaining = totalSeconds;
+      timerEl.textContent = formatTime(totalSeconds);
+      timerEl.classList.remove("done", "running");
+      progressEl.style.width = "0%";
+      progressEl.className = "progress-fill";
+      updateControls();
+      syncUiState();
+    }
+
+    /**
+     * UI 状态机：派生显示状态
+     *   idle    — 还没抽到题
+     *   ready   — 已抽到题，等待开始
+     *   running — 挑战中
+     *   paused  — 已暂停
+     *   done    — 挑战完成
+     */
+    function deriveUiState() {
+      if (timerState === 'running') return 'running';
+      if (timerState === 'paused')  return 'paused';
+      if (timerState === 'done')    return 'done';
+      if (currentTopicId)           return 'ready';
+      return 'idle';
+    }
+
+    function syncUiState() {
+      const s = deriveUiState();
+      const displayState = slotRunning ? 'spinning' : s;
+      statusStrip.dataset.state = displayState;
+
+      // 状态条主文案 + icon（合并 statusIcon）
+      const stateMap = {
+        idle:     { icon: '💡', text: '提示：请先点击上方区域抽取题目' },
+        spinning: { icon: '🎲', text: '正在抽取，别急…' },
+        ready:    { icon: '✅', text: '已就绪，随时可以点击下方【开始吧】' },
+        running:  { icon: '▶️', text: '正在挑战中' },
+        paused:   { icon: '⏸',  text: '已暂停，随时继续' },
+        done:     { icon: '🎉', text: '完成了一次挑战，很棒' }
+      };
+      const cur = stateMap[displayState] || stateMap.idle;
+      if (statusIcon) statusIcon.textContent = cur.icon;
+      statusText.textContent = cur.text;
+      if (timerSub) timerSub.textContent = displayState === 'running' ? '剩余时间' : (displayState === 'done' ? '很棒' : '倒计时');
+
+      // 计时器是否显示（idle/spinning 时隐藏大字号，避免视觉冗余）
+      const showTimer = (displayState !== 'idle' && displayState !== 'spinning');
+      timerDisplay.style.display = showTimer ? 'flex' : 'none';
+      progressBar.style.display  = showTimer ? 'block' : 'none';
+
+      // 卡片高亮
+      trainCard.classList.toggle('is-running', displayState === 'running');
+
+      // 热区标记：是否已抽到题（控制 CTA 角标显隐）
+      if (slotWrap) slotWrap.dataset.hasTopic = (s === 'idle') ? '0' : '1';
+
+      // idle 状态没有 currentTopicId，tag 也不显示
+      if (s === 'idle') {
+        tagEl.classList.remove('show');
+      }
+    }
+
+    /* ─── Slot Machine · rAF 多阶段减速动画 ───
+       设计目标：4.5 ~ 5.5 秒抽题过程，营造仪式感、期待感、最终揭晓感。
+       阶段：
+         · Phase 1 高速 (0  ~ 1500ms)：70 ~ 100ms 跳字
+         · Phase 2 减速 (1500 ~ 3500ms)：100 → 300ms 平滑过渡
+         · Phase 3 慢速 (3500 ~ 4800ms)：350 → 750ms 平滑过渡
+         · Phase 4 假停顿 (4800 ~ 5400ms)：插入 1~2 次 ~500~800ms 停顿
+         · Phase 5 揭晓 (剩余)：最终题目写入选中层 + 轻微 scale/opacity 入场
+       关键原则：
+         · 单次抽题的最终结果在动画开始前用 pickTopic() 提前锁定为 finalTopic
+         · 动画过程中显示的所有"候选话题"只是路过，与 finalTopic 无关
+         · 收尾时把 finalTopic 写入当前可见层并加 land 入场动画
+       性能：
+         · 单一 rAF 主循环驱动，不嵌套 setTimeout
+         · DOM 仅修改 textContent / classList.toggle（opacity + transform）
+    */
+    let slotRunning = false;
+    let slotRafId = 0;
+    let slotStartTime = 0;
+    let slotCurrentLayer = 'A';   // 当前可见层
+    let slotPool = [];            // 候选话题池
+    let slotLastText = '';        // 上一次显示的文本（防止连续重复）
+    let slotStepCount = 0;        // 已跳字次数
+    let slotFinalTopic = null;    // 本次抽题开始前已锁定的最终结果
+
+    // ─── 总时长配置（毫秒）───
+    const SLOT_PHASE1_END   = 1500;  // 高速阶段结束
+    const SLOT_PHASE2_END   = 3500;  // 减速阶段结束
+    const SLOT_PHASE3_END   = 4800;  // 慢速阶段结束
+    const SLOT_PAUSE_END    = 5400;  // 假停顿阶段结束
+    const SLOT_TOTAL_TIME   = 5500;  // 总时长（不含揭晓动画）
+
+    // 各阶段目标间隔
+    const SLOT_P1_INTERVAL  = 80;    // 高速阶段 70~100ms
+    const SLOT_P2_END       = 300;   // 减速结束时的间隔
+    const SLOT_P3_END       = 750;   // 慢速结束时的间隔
+    const SLOT_PAUSE_1      = 500;   // 假停顿 1
+    const SLOT_PAUSE_2      = 800;   // 假停顿 2
+
+    /** ease-out cubic：前期快、后期慢（用于 progress 0→1 的非线性映射） */
+    function easeOutCubic(t) {
+      t = Math.max(0, Math.min(1, t));
+      return 1 - Math.pow(1 - t, 3);
+    }
+
+    /** ease-in-out：用于 Phase 2、3 平滑减速 */
+    function easeInOutCubic(t) {
+      t = Math.max(0, Math.min(1, t));
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    /**
+     * 根据已用时间计算下一次跳字间隔（毫秒）
+     *   Phase 1 [0,1500]：恒定高速 80ms 左右（轻微抖动 70~95ms）
+     *   Phase 2 [1500,3500]：从 80 缓动到 300ms
+     *   Phase 3 [3500,4800]：从 300 缓动到 750ms
+     *   Phase 4 [4800,5400]：假停顿，间隔 500~800ms
+     *   Phase 5 [5400,+]  ：已被 finishSlot 接管
+     */
+    function computeNextInterval(elapsed) {
+      if (elapsed < SLOT_PHASE1_END) {
+        // 高速：基线 80ms，±15ms 抖动模拟"随机感"
+        return SLOT_P1_INTERVAL + (Math.random() * 30 - 15);
+      }
+      if (elapsed < SLOT_PHASE2_END) {
+        // 减速：80 → 300ms，ease-in-out 让两端平
+        const t = (elapsed - SLOT_PHASE1_END) / (SLOT_PHASE2_END - SLOT_PHASE1_END);
+        const eased = easeInOutCubic(t);
+        return SLOT_P1_INTERVAL + (SLOT_P2_END - SLOT_P1_INTERVAL) * eased;
+      }
+      if (elapsed < SLOT_PHASE3_END) {
+        // 慢速：300 → 750ms
+        const t = (elapsed - SLOT_PHASE2_END) / (SLOT_PHASE3_END - SLOT_PHASE2_END);
+        const eased = easeInOutCubic(t);
+        return SLOT_P2_END + (SLOT_P3_END - SLOT_P2_END) * eased;
+      }
+      if (elapsed < SLOT_PAUSE_END) {
+        // 假停顿：2 次停顿中点对齐
+        // [4800, 5100) 间隔 ~500ms（停顿 1）
+        // [5100, 5400) 间隔 ~800ms（停顿 2）
+        if (elapsed < SLOT_PAUSE_END - 300) return SLOT_PAUSE_1;
+        return SLOT_PAUSE_2;
+      }
+      return 0;
+    }
+
+    /** 是否处于"假停顿"阶段（用于控制音效是否播放） */
+    function isInPausePhase(elapsed) {
+      return elapsed >= SLOT_PHASE3_END && elapsed < SLOT_PAUSE_END;
+    }
+
+    /**
+     * 在某一层写入话题文本（不带 .empty，不触发 land 动画）
+     */
+    function setSlotText(layer, text) {
+      const el = layer.querySelector('.topic');
+      if (!el) return;
+      el.textContent = text;
+      el.classList.remove('empty', 'land', 'blur', 'ghost');
+    }
+
+    /**
+     * 双层交叉淡入：
+     *   incoming 先 hidden → 写入文本 → reflow → 加 visible → outgoing 隐藏
+     *   使用 CSS 的 opacity 0/1 过渡，transform 不参与避免抖动
+     */
+    function swapLayers(nextText) {
+      const layerA = document.getElementById('slotA');
+      const layerB = document.getElementById('slotB');
+      if (!layerA || !layerB) return;
+
+      const incoming = slotCurrentLayer === 'A' ? layerB : layerA;
+      const outgoing = slotCurrentLayer === 'A' ? layerA : layerB;
+
+      // 立即隐藏 incoming（不需要 0.08s 过渡，使用 class toggle 瞬间）
+      incoming.classList.remove('visible');
+      // 写入新文本
+      setSlotText(incoming, nextText);
+
+      // 强制 reflow 让 transition 生效
+      // eslint-disable-next-line no-unused-expressions
+      incoming.offsetWidth;
+
+      incoming.classList.add('visible');
+      outgoing.classList.remove('visible');
+
+      slotCurrentLayer = slotCurrentLayer === 'A' ? 'B' : 'A';
+    }
+
+    /**
+     * 从候选池选一个不等于 slotLastText 的随机话题
+     * 池子 ≤ 1 时直接返回，避免无限循环
+     */
+    function pickRandomFromPool() {
+      if (!slotPool.length) return '';
+      if (slotPool.length === 1) {
+        slotLastText = slotPool[0].text;
+        return slotPool[0].text;
+      }
+      let pick = slotPool[Math.floor(Math.random() * slotPool.length)];
+      let guard = 0;
+      while (pick.text === slotLastText && guard++ < 8) {
+        pick = slotPool[Math.floor(Math.random() * slotPool.length)];
+      }
+      slotLastText = pick.text;
+      return pick.text;
+    }
+
+    /**
+     * rAF 主循环：按 elapsed time 决定下一次跳字时机
+     * 不嵌套 setTimeout，避免累积误差
+     */
+    function slotLoop(now) {
+      if (!slotRunning) return;
+
+      const elapsed = now - slotStartTime;
+
+      // 1) 超过总时长 → 收尾
+      if (elapsed >= SLOT_TOTAL_TIME) {
+        finishSlot();
+        return;
+      }
+
+      // 2) 是否到下一次跳字时机
+      //    第一次跳字立即触发（让用户立刻看到动画开始）
+      const sinceLastStep = elapsed - (slotLoop._last || 0);
+      const nextInterval = computeNextInterval(elapsed);
+
+      if (slotStepCount === 0 || sinceLastStep >= nextInterval) {
+        slotLoop._last = elapsed;
+        slotStepCount++;
+
+        // 写入新文本（最终揭示阶段不切换，由 finishSlot 负责）
+        const text = pickRandomFromPool();
+        swapLayers(text);
+
+        // 音效：随阶段调整
+        //   · Phase 1（高速）: 正常音量、标准音高
+        //   · Phase 2（减速）: 略降音量、音高
+        //   · Phase 3（慢速）: 更轻、音高低
+        //   · Phase 4（假停顿）: 不播 tick（避免停顿期间的音效破坏节奏）
+        if (!isInPausePhase(elapsed)) {
+          const progress = elapsed / SLOT_TOTAL_TIME;
+          const vol = progress < 0.30 ? 0.14 : (progress < 0.65 ? 0.10 : 0.07);
+          const pitchScale = 1 - progress * 0.35; // 前期 1.0 → 后期 0.65
+          playClick(vol, pitchScale);
+        }
+      }
+
+      // 3) 继续下一帧
+      slotRafId = requestAnimationFrame(slotLoop);
+    }
+
+    /**
+     * 收尾：把 slotFinalTopic 写入当前可见层 + 落地动画 + 开箱音 + 解锁按钮
+     */
+    function finishSlot() {
+      slotRunning = false;
+      slotRafId = 0;
+      slotLoop._last = 0;
+
+      const final = slotFinalTopic;
+      slotFinalTopic = null;
+
+      if (!final) {
+        unlockDrawButton();
+        slotWrap.classList.remove('spinning');
+        return;
+      }
+
+      // 揭晓音：柔和 pop
+      playRevealSound();
+
+      // 把 finalTopic 写入当前可见层
+      const finalLayerId = slotCurrentLayer === 'A' ? 'slotA' : 'slotB';
+      const finalLayer = document.getElementById(finalLayerId);
+      if (finalLayer) {
+        setSlotText(finalLayer, final.text);
+        finalLayer.classList.add('visible');
+        const otherId = slotCurrentLayer === 'A' ? 'slotB' : 'slotA';
+        const other = document.getElementById(otherId);
+        if (other) other.classList.remove('visible');
+      }
+
+      // 揭晓入场：scale + opacity 轻微缩放（用 land 类）
+      const topicNode = finalLayer ? finalLayer.querySelector('.topic') : null;
+      if (topicNode) {
+        topicNode.classList.remove('land');
+        // eslint-disable-next-line no-unused-expressions
+        topicNode.offsetWidth;
+        topicNode.classList.add('land');
+      }
+
+      // 题目区域短暂高光（≈400ms 一次性）
+      slotWrap.classList.remove('reveal');
+      // eslint-disable-next-line no-unused-expressions
+      slotWrap.offsetWidth;
+      slotWrap.classList.add('reveal');
+      setTimeout(function () {
+        slotWrap.classList.remove('reveal');
+      }, 420);
+
+      // 退出 spinning 态
+      slotWrap.classList.remove('spinning');
+
+      // 标签显示
+      const showTag = trainingScope.type !== 'all';
+      if (showTag) {
+        const label = getTopicGroupLabel(final);
+        tagEl.textContent = label;
+        tagEl.className = 'topic-tag show ' + (final.groupId == null ? 'ungrouped' : 'group');
+      } else {
+        tagEl.classList.remove('show');
+      }
+
+      // 更新全局状态
+      currentTopicId = final.id;
+      lastTopicId = final.id;
+      if (modal.classList.contains('open')) renderModalList();
+
+      // 同步 UI
+      syncUiState();
+
+      // 揭晓入场动画结束后解锁按钮 + 移除 land
+      setTimeout(function () {
+        if (topicNode) topicNode.classList.remove('land');
+        unlockDrawButton();
+      }, 420);
+    }
+
+    function lockDrawButton() {
+      try {
+        // 锁定核心热区：禁用 + 视觉提示
+        if (slotWrap) {
+          slotWrap.disabled = true;
+          slotWrap.setAttribute('aria-disabled', 'true');
+        }
+        syncUiState();
+      } catch (_) {}
+    }
+
+    function unlockDrawButton() {
+      try {
+        if (slotWrap) {
+          slotWrap.disabled = false;
+          slotWrap.removeAttribute('aria-disabled');
+        }
+        syncUiState();
+      } catch (_) {}
+    }
+
+    /**
+     * 主入口：点击抽题按钮 / 空格触发
+     */
+    function doSlotMachine() {
+      if (slotRunning) return;        // 防重入
+
+      // 按当前抽题范围构造候选池
+      const pool = getScopedTopics();
+      if (!pool.length) {
+        if (trainingScope.type === 'group') {
+          const g = groups.find(function (x) { return x.id === trainingScope.groupId; });
+          showToast(`「${g ? g.name : '当前'}」分组还没有题目`);
+        } else if (trainingScope.type === 'ungrouped') {
+          showToast('未分组暂无挑战，请先添加');
+        } else {
+          showToast('挑战库为空，请先添加挑战');
+        }
+        return;
+      }
+
+      if (timerState === 'running') pauseTimer();
+      resetTimer();
+
+      // 关键：提前确定最终话题（在动画开始前锁定）
+      // pickTopic() 内部会处理 "避免与上一次相同" 的逻辑
+      const final = pickTopic();
+      if (!final) {
+        // 池子理论上不会空（前面已检查），保险起见
+        showToast('抽题失败');
+        return;
+      }
+      slotFinalTopic = final;
+
+      // 构造动画候选池
+      slotPool = pool;
+      slotLastText = final.text;  // 防止动画第一帧就和最终结果一样突兀
+      slotStepCount = 0;
+      slotLoop._last = 0;
+
+      // 重置双层
+      slotCurrentLayer = 'A';
+
+      // UI 进入 spinning 态
+      slotWrap.classList.add('spinning');
+      lockDrawButton();
+
+      // 预热音频
+      warmUpAudio();
+      const ctx = getAudioCtx();
+      if (ctx && ctx.state === 'suspended') {
+        try { ctx.resume(); } catch (_) {}
+      }
+
+      // 启动 rAF 主循环
+      slotRunning = true;
+      slotStartTime = performance.now();
+      slotRafId = requestAnimationFrame(slotLoop);
+    }
+
+    function selectFromLibrary(id) {
+      const item = topics.find(t => t.id === id);
+      if (!item) return;
+      showTopic(item);
+      closeModal();
+      resetTimer();
+    }
+
+    /* ─── Topic CRUD ─── */
+    function updateSelectionUI() {
+      const count = selectedIds.size;
+      btnDelSel.disabled = count === 0;
+      btnDelSel.textContent = count > 0 ? `删除选中 (${count})` : "删除选中";
+      if (btnMoveSel) {
+        btnMoveSel.disabled = count === 0;
+        btnMoveSel.textContent = count > 0 ? `移动到分组 (${count})` : "移动到分组";
+      }
+      const allIds = topics.map(function (t) { return t.id; });
+      selectAllEl.checked = allIds.length > 0 && count === allIds.length;
+      selectAllEl.indeterminate = count > 0 && count < allIds.length;
+    }
+
+    function toggleSelect(id, checked) {
+      checked ? selectedIds.add(id) : selectedIds.delete(id);
+      updateSelectionUI();
+      const row = modalBody.querySelector(`[data-id="${id}"]`);
+      if (row) row.classList.toggle("selected", checked);
+    }
+
+    function addTopic(text, groupId) {
+      const trimmed = String(text || '').trim();
+      if (!trimmed) return false;
+      // 校验 groupId：必须是真实存在的分组 id，否则置 null
+      const gid = (groupId && groups.some(function (g) { return g.id === groupId; })) ? groupId : null;
+      topics.push({ id: generateId(), text: trimmed, groupId: gid });
+      saveTopics();
+      return true;
+    }
+
+    function editTopic(id, newText) {
+      const trimmed = newText.trim();
+      if (!trimmed) return false;
+      const item = topics.find(t => t.id === id);
+      if (!item) return false;
+      item.text = trimmed;
+      saveTopics();
+      if (currentTopicId === id) showTopic(item);
+      return true;
+    }
+
+    function deleteTopics(ids) {
+      const idSet = ids instanceof Set ? ids : new Set(ids);
+      if (idSet.size === 0) return;
+      topics = topics.filter(t => !idSet.has(t.id));
+      saveTopics();
+      idSet.forEach(id => selectedIds.delete(id));
+      
+      if (currentTopicId && idSet.has(currentTopicId)) {
+        // 强制写入 A 层空状态
+        const topicA = document.querySelector('#slotA .topic');
+        if (topicA) {
+          topicA.innerHTML = "点击下方按钮<br>开始你的表达力训练";
+          topicA.classList.add("empty");
+        }
+        
+        // 同时复位 slot 双层结构
+        try {
+          const slotA = document.getElementById('slotA');
+          const slotB = document.getElementById('slotB');
+          if (slotA) slotA.classList.add('visible');
+          if (slotB) { 
+            slotB.classList.remove('visible'); 
+            const topicB = slotB.querySelector('.topic');
+            if (topicB) topicB.textContent = '';
+          }
+          slotCurrentLayer = 'A';
+        } catch (_) {}
+        
+        currentTopicId = null;
+        resetTimer();
+      }
+      
+      editingId = null;
+      renderModalList();
+      syncUiState();
+      showToast(`已删除 ${idSet.size} 个挑战`);
+    }
+
+    /**
+     * 解析文件内容。返回 [{ text, groupId }]
+     * groupId 暂统一为 null（由调用方在"上传到分组"弹窗中决定覆盖）
+     */
+    function parseTxt(c) {
+      return c.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean)
+        .map(function (text) { return { text: text, groupId: null }; });
+    }
+
+    function parseCsv(c) {
+      return c.split(/\r?\n/).filter(function (l) { return l.trim(); }).map(function (line) {
+        const cols = line.match(/("([^"]|"")*"|[^,]*)/g) || [];
+        const clean = cols.map(function (x) {
+          return x.replace(/^"|"$/g, '').replace(/""/g, '"').trim();
+        });
+        const text = clean[0];
+        return text ? { text: text, groupId: null } : null;
+      }).filter(Boolean);
+    }
+
+    function parseJson(c) {
+      const data = JSON.parse(c);
+      if (!Array.isArray(data)) throw new Error('JSON 必须是数组');
+      return data.map(function (item) {
+        if (typeof item === 'string') return { text: item.trim(), groupId: null };
+        if (item && typeof item.text === 'string') return { text: item.text.trim(), groupId: null };
+        return null;
+      }).filter(function (t) { return t && t.text; });
+    }
+
+    /**
+     * 把解析后的话题加入 currentTopics。
+     * 规则：若 text 与现有话题重复则跳过，否则加入。
+     */
+    function commitImportedTopics(items, groupId) {
+      const gid = (groupId && groups.some(function (g) { return g.id === groupId; })) ? groupId : null;
+      const existing = new Set(topics.map(function (t) { return t.text; }));
+      let added = 0;
+      items.forEach(function (it) {
+        const text = String(it.text || '').trim();
+        if (!text || existing.has(text)) return;
+        topics.push({ id: generateId(), text: text, groupId: gid });
+        existing.add(text);
+        added++;
+      });
+      if (added > 0) saveTopics();
+      return added;
+    }
+
+    function handleFileUpload(file) {
+      const ext = file.name.split('.').pop().toLowerCase();
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          const content = e.target.result;
+          let parsed;
+          if (ext === 'txt')        parsed = parseTxt(content);
+          else if (ext === 'csv')   parsed = parseCsv(content);
+          else if (ext === 'json')  parsed = parseJson(content);
+          else { showToast('不支持的文件格式'); fileUpload.value = ''; return; }
+
+          if (!parsed || !parsed.length) {
+            showToast('没有可导入的挑战');
+            fileUpload.value = '';
+            return;
+          }
+
+          // 没有分组 → 直接导入未分组
+          if (!groups.length) {
+            const added = commitImportedTopics(parsed, null);
+            fileUpload.value = '';
+            if (added > 0) { renderModalList(); showToast(`成功导入 ${added} 个挑战`); }
+            else showToast('没有可导入的挑战（重复或为空）');
+            return;
+          }
+
+          // 有分组 → 弹窗让用户选择
+          pendingUploadItems = parsed;
+          pendingUploadExt = ext;
+          openUploadGroupModal();
+        } catch (err) {
+          showToast('文件解析失败：' + err.message);
+        }
+        fileUpload.value = '';
+      };
+      reader.readAsText(file, 'UTF-8');
+    }
+
+    function startEdit(id) {
+      editingId = id;
+      renderModalList();
+      const inp = modalBody.querySelector(`[data-edit-id="${id}"]`);
+      if (inp) { inp.focus(); inp.select(); }
+    }
+
+    function cancelEdit() { editingId = null; renderModalList(); }
+
+    function saveEdit(id, text) {
+      if (!editTopic(id, text)) { showToast("挑战内容不能为空"); return; }
+      editingId = null;
+      renderModalList();
+      showToast("挑战已更新");
+    }
+
+    function createTopicRow(item) {
+      const row = document.createElement("li");
+      row.className = "topic-row";
+      row.dataset.id = item.id;
+      if (item.id === currentTopicId) row.classList.add("active");
+      if (selectedIds.has(item.id)) row.classList.add("selected");
+
+      const check = document.createElement("input");
+      check.type = "checkbox";
+      check.className = "topic-check";
+      check.checked = selectedIds.has(item.id);
+      check.addEventListener("change", () => toggleSelect(item.id, check.checked));
+      check.addEventListener("click", e => e.stopPropagation());
+
+      if (editingId === item.id) {
+        const inp = document.createElement("input");
+        inp.className = "topic-edit-input";
+        inp.dataset.editId = item.id;
+        inp.value = item.text;
+        inp.addEventListener("click", e => e.stopPropagation());
+        inp.addEventListener("keydown", e => {
+          if (e.key === "Enter") saveEdit(item.id, inp.value);
+          if (e.key === "Escape") cancelEdit();
+        });
+        const bS = document.createElement("button"); bS.className = "btn-icon save"; bS.textContent = "✓"; bS.title = "保存"; bS.addEventListener("click", e => { e.stopPropagation(); saveEdit(item.id, inp.value); });
+        const bC = document.createElement("button"); bC.className = "btn-icon cancel"; bC.textContent = "✗"; bC.title = "取消"; bC.addEventListener("click", e => { e.stopPropagation(); cancelEdit(); });
+        row.append(check, inp, bS, bC);
+      } else {
+        const span = document.createElement("span");
+        span.className = "topic-text";
+        span.textContent = item.text;
+        span.title = "点击设为当前挑战";
+        span.addEventListener("click", () => selectFromLibrary(item.id));
+        const bE = document.createElement("button"); bE.className = "btn-icon"; bE.textContent = "✎"; bE.title = "编辑"; bE.addEventListener("click", e => { e.stopPropagation(); startEdit(item.id); });
+        const bD = document.createElement("button"); bD.className = "btn-icon cancel"; bD.textContent = "×"; bD.title = "删除"; bD.addEventListener("click", e => { e.stopPropagation(); deleteTopics(new Set([item.id])); });
+        row.append(check, span, bE, bD);
+      }
+      return row;
+    }
+
+    /**
+     * 渲染话题库列表：
+     * 1) "未分组" 永远在最前面
+     * 2) 用户自定义分组按保存顺序排在后面
+     * 3) 即使分组为空也保留该分组标题
+     */
+    function renderModalList() {
+      modalBody.innerHTML = '';
+      modalCount.textContent = `共 ${topics.length} 个挑战`;
+
+      // "未分组" 区
+      const ungrouped = topics.filter(function (t) { return t.groupId == null; });
+      modalBody.appendChild(buildGroupSection({
+        key: 'ungrouped',
+        title: '未分组',
+        cls: 'ungrouped',
+        section: { kind: 'ungrouped' },
+        items: ungrouped,
+        actions: []
+      }));
+
+      // 用户自定义分组
+      groups.forEach(function (g) {
+        const items = topics.filter(function (t) { return t.groupId === g.id; });
+        modalBody.appendChild(buildGroupSection({
+          key: 'group-' + g.id,
+          title: g.name,
+          cls: 'group',
+          dataId: g.id,
+          section: { kind: 'group', groupId: g.id },
+          items: items,
+          actions: [
+            { title: '重命名', text: '✎', cls: 'edit',  onClick: function () { openGroupRenameModal(g.id); } },
+            { title: '删除',   text: '×', cls: 'cancel', onClick: function () { confirmDeleteGroup(g.id); } }
+          ]
+        }));
+      });
+
+      if (!topics.length) {
+        modalBody.innerHTML = '<p style="color:var(--text-tertiary);font-size:0.9rem;text-align:center;padding:24px 0">暂无挑战，请添加或上传</p>';
+      }
+
+      // 同步"新增话题"分组选择器 & "移动到分组"按钮
+      syncNewTopicGroupSelect();
+      updateSelectionUI();
+    }
+
+    function buildGroupSection(opts) {
+      const gEl = document.createElement('div');
+      gEl.className = 'modal-group';
+      gEl.dataset.groupKey = opts.key;
+
+      const section = opts.section || { kind: opts.cls === 'group' ? 'group' : 'ungrouped', groupId: opts.dataId };
+      if (isCollapsed(section)) gEl.classList.add('collapsed');
+
+      const titleEl = document.createElement('div');
+      titleEl.className = 'modal-group-title ' + opts.cls;
+
+      const caret = document.createElement('span');
+      caret.className = 'group-caret';
+      caret.textContent = '⌄';
+
+      const label = document.createElement('span');
+      label.textContent = `${opts.title}（${opts.items.length}）`;
+
+      titleEl.append(caret, label);
+
+      if (opts.actions && opts.actions.length) {
+        const acts = document.createElement('span');
+        acts.className = 'group-actions';
+        opts.actions.forEach(function (a) {
+          const b = document.createElement('button');
+          b.className = 'btn-icon ' + (a.cls || '');
+          b.textContent = a.text;
+          b.title = a.title;
+          b.addEventListener('click', function (e) {
+            e.stopPropagation();
+            try { a.onClick(); } catch (err) { console.warn(err); }
+          });
+          acts.appendChild(b);
+        });
+        titleEl.appendChild(acts);
+      }
+
+      // 点击标题切换折叠（不包括操作按钮，已 stopPropagation）
+      titleEl.addEventListener('click', function () {
+        const collapsed = gEl.classList.toggle('collapsed');
+        setCollapsed(section, collapsed);
+      });
+
+      // 折叠体
+      const body = document.createElement('div');
+      body.className = 'group-body';
+
+      const ul = document.createElement('ul');
+      ul.className = 'topic-list';
+      if (opts.items.length) {
+        opts.items.forEach(function (item) { ul.appendChild(createTopicRow(item)); });
+      } else {
+        const li = document.createElement('li');
+        li.className = 'group-empty-hint';
+        li.textContent = '暂无挑战';
+        ul.appendChild(li);
+      }
+      body.appendChild(ul);
+
+      gEl.append(titleEl, body);
+      return gEl;
+    }
+
+    /**
+     * 同步"新增话题"分组下拉：
+     * - 没有分组 → 隐藏下拉
+     * - 有分组   → 显示，选项 = 未分组 + 所有分组
+     */
+    function syncNewTopicGroupSelect() {
+      const sel = newTopicGroup;
+      if (!sel) return;
+      if (!groups.length) {
+        sel.style.display = 'none';
+        sel.innerHTML = '';
+        return;
+      }
+      sel.style.display = '';
+      const prev = sel.value;
+      sel.innerHTML = '';
+      const o0 = document.createElement('option');
+      o0.value = ''; o0.textContent = '未分组';
+      sel.appendChild(o0);
+      groups.forEach(function (g) {
+        const o = document.createElement('option');
+        o.value = g.id;
+        o.textContent = g.name;
+        sel.appendChild(o);
+      });
+      sel.value = (prev && groups.some(function (g) { return g.id === prev; })) ? prev : '';
+    }
+
+    function confirmDeleteGroup(id) {
+      const g = groups.find(function (x) { return x.id === id; });
+      if (!g) return;
+      const movedCount = topics.filter(function (t) { return t.groupId === id; }).length;
+      const msg = `确定删除"${g.name}"分组吗？\n\n该分组中的 ${movedCount} 个挑战不会被删除，它们将自动移动到"未分组"。`;
+      if (!confirm(msg)) return;
+      const res = deleteGroup(id);
+      if (!res.ok) { showToast(res.msg || '删除失败'); return; }
+      renderModalList();
+      // setTrainingScope 在 deleteGroup 内已调用，这里再同步渲染一次
+      renderScopePill();
+      showToast(`已删除分组"${g.name}"，${res.movedCount} 个挑战已转入未分组`);
+    }
+
+    function openModal()  { editingId = null; renderModalList(); modal.classList.add("open"); }
+    function closeModal(){ modal.classList.remove("open"); editingId = null; }
+
+    /* ─── Init ─── */
+    // 1) 旧数据迁移（cat → groupId: null）
+    migrateOldTopics();
+    // 2) 加载课程库话题 + 分组
+    topics = loadTopics();
+    groups = loadGroups();
+    // 3) 兜底：确保每个话题都带 groupId 字段（防止老数据 / 第三方脏数据）
+    topics.forEach(function (t) {
+      if (!t || typeof t.text !== 'string') return;
+      if (!('groupId' in t)) t.groupId = null;
+    });
+    // 4) 加载抽题范围 + 折叠状态
+    trainingScope = loadTrainingScope();
+    groupCollapseMap = loadCollapseMap();
+    // 5) 兜底：scope 引用的分组不存在时回退到全部
+    validateScope();
+    // 6) 渲染顶部"抽题范围"显示
+    renderScopePill();
+    // 7) 计时器
+    const durSec = loadDuration();
+    // 用总秒数同步到 输入框：限制为非负，避免负值
+    const _dH = Math.floor(durSec / 3600);
+    const _dM = Math.floor((durSec % 3600) / 60);
+    const _dS = durSec % 60;
+    timeInputH.value = String(_dH).padStart(2, '0');
+    timeInputM.value = String(_dM).padStart(2, '0');
+    timeInputS.value = String(_dS).padStart(2, '0');
+    totalSeconds = durSec;
+    remaining = totalSeconds;
+    timerEl.textContent = formatTime(totalSeconds);
+    updateControls();
+    // 8) 初始化顶部标签为空
+    tagEl.textContent = '';
+    tagEl.className = 'topic-tag';
+    // 9) 时间快捷按钮
+    bindDurationPresets();
+    syncDurationPresets();
+    // 10) 同步 UI 状态机
+    syncUiState();
+
+    /* 训练时长快捷按钮 + 自定义时分秒 */
+    function getCurrentCustomSeconds() {
+      // 读取 HH/MM/SS 输入框原始字符（不规范化），未填视为 0
+      const h = parseInt(timeInputH.value, 10);
+      const m = parseInt(timeInputM.value, 10);
+      const s = parseInt(timeInputS.value, 10);
+      const H = isNaN(h) || h < 0 ? 0 : (h > 99 ? 99 : h);
+      const M = isNaN(m) || m < 0 ? 0 : (m > 59 ? 59 : m);
+      const S = isNaN(s) || s < 0 ? 0 : (s > 59 ? 59 : s);
+      return H * 3600 + M * 60 + S;
+    }
+
+    /** 把当前选择的总秒数写入 LocalStorage，并刷新页面 timer */
+    function applyDurationSeconds(sec) {
+      if (!(sec > 0)) sec = 1; // 防御
+      totalSeconds = sec;
+      saveDuration(sec);
+      if (timerState === 'idle' || timerState === 'done') {
+        remaining = totalSeconds;
+        timerEl.textContent = formatTime(totalSeconds);
+        progressEl.style.width = '0%';
+        progressEl.className = 'progress-fill';
+      }
+    }
+
+    /** 把总秒数拆分并回填到三个输入框（不立即应用为选中时间） */
+    function fillCustomInputsFromSeconds(sec) {
+      if (sec == null || isNaN(sec) || sec <= 0) sec = 300;
+      const H = Math.floor(sec / 3600);
+      const M = Math.floor((sec % 3600) / 60);
+      const S = sec % 60;
+      timeInputH.value = String(H).padStart(2, '0');
+      timeInputM.value = String(M).padStart(2, '0');
+      timeInputS.value = String(S).padStart(2, '0');
+    }
+
+    /** 限制输入为数字字符并自动加 0 前缀以保证两位 */
+    function clampTimeInput(input, max, digits) {
+      if (!input) return;
+      // 去掉所有非数字字符
+      let raw = input.value.replace(/\D+/g, '');
+      if (raw === '') raw = '';
+      // 立即规范化：长度限制
+      if (raw.length > digits) raw = raw.slice(0, digits);
+      // 边界：> max 时截断到 max
+      let n = raw === '' ? 0 : parseInt(raw, 10);
+      if (isNaN(n)) n = 0;
+      if (max != null && n > max) {
+        n = max;
+        raw = String(n);
+      }
+      input.value = digits === 2 ? String(n).padStart(2, '0') : String(n);
+    }
+
+    function showCustomDuration(show) {
+      if (show) customDurationWrap.classList.add('show');
+      else customDurationWrap.classList.remove('show');
+    }
+
+    function bindDurationPresets() {
+      const chips = durationPresets.querySelectorAll('.duration-chip');
+      chips.forEach(function (chip) {
+        chip.addEventListener('click', function () {
+          // 训练中禁止改时间
+          if (timerState === 'running' || timerState === 'paused') {
+            showToast('请暂停训练后修改时间');
+            return;
+          }
+          const v = chip.dataset.min;
+          if (v === 'custom') {
+            // 先把当前已选时间回填到输入框，避免每次都从 0 开始
+            fillCustomInputsFromSeconds(totalSeconds);
+            showCustomDuration(true);
+            setCustomError('');
+            // 焦点放到小时
+            setTimeout(() => { timeInputH.focus(); timeInputH.select(); }, 40);
+            syncDurationPresets();
+            return;
+          }
+          const n = parseInt(v, 10);
+          if (isNaN(n)) return;
+          // 切换到快捷时间：收起自定义面板，并把对应秒数写进去
+          showCustomDuration(false);
+          setCustomError('');
+          const sec = n * 60;
+          applyDurationSeconds(sec);
+          // 把当前选择同步到输入框（即使面板隐藏也无妨）
+          fillCustomInputsFromSeconds(sec);
+          syncDurationPresets();
+        });
+      });
+    }
+
+    function syncDurationPresets() {
+      const chips = durationPresets.querySelectorAll('.duration-chip');
+      let matched = false;
+      chips.forEach(function (chip) {
+        const v = chip.dataset.min;
+        if (v !== 'custom') {
+          const n = parseInt(v, 10);
+          if (n * 60 === totalSeconds) {
+            chip.classList.add('active');
+            matched = true;
+          } else {
+            chip.classList.remove('active');
+          }
+        }
+      });
+      // 自定义激活条件：当前总秒数不等于任意快捷 chip
+      durationCustomChip.classList.toggle('active', !matched);
+    }
+
+    /* 输入体验：每输入都规范化 */
+    [timeInputH, timeInputM, timeInputS].forEach(function (inp, idx) {
+      const max = inp === timeInputH ? 99 : 59;
+      inp.addEventListener('input', function () { clampTimeInput(inp, max, 2); setCustomError(''); });
+      inp.addEventListener('blur',  function () { clampTimeInput(inp, max, 2); });
+      inp.addEventListener('focus', function () {
+        // 输入框全部选中，方便覆盖输入
+        setTimeout(() => inp.select(), 0);
+      });
+      inp.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { inp.blur(); btnConfirmTime.click(); }
+      });
+    });
+
+    /* 训练过程中锁定自定义面板的输入与确认按钮 */
+    function syncCustomDurationLock() {
+      const locked = (timerState === 'running' || timerState === 'paused');
+      [timeInputH, timeInputM, timeInputS].forEach(i => { i.disabled = locked; });
+      btnConfirmTime.disabled = locked;
+      btnConfirmTime.classList.toggle('locked', locked);
+      // 快捷按钮也要禁用
+      durationPresets.querySelectorAll('.duration-chip').forEach(c => { c.disabled = locked; });
+    }
+
+    function setCustomError(msg) {
+      customDurationError.textContent = msg || '';
+      customDurationError.style.opacity = msg ? '1' : '0';
+    }
+
+    /* 确认时间按钮：把 HH/MM/SS 合成总秒数并应用 */
+    btnConfirmTime.addEventListener('click', function () {
+      if (timerState === 'running' || timerState === 'paused') {
+        showToast('请暂停训练后修改时间');
+        return;
+      }
+      // 最后一次规范化
+      clampTimeInput(timeInputH, 99, 2);
+      clampTimeInput(timeInputM, 59, 2);
+      clampTimeInput(timeInputS, 59, 2);
+      const sec = getCurrentCustomSeconds();
+      if (!(sec > 0)) {
+        setCustomError('训练时间不能为 0');
+        // 微抖动
+        customDurationWrap.animate(
+          [{ transform: 'translateX(0)' }, { transform: 'translateX(-4px)' }, { transform: 'translateX(4px)' }, { transform: 'translateX(0)' }],
+          { duration: 220, easing: 'ease-out' }
+        );
+        return;
+      }
+      setCustomError('');
+      applyDurationSeconds(sec);
+      // 收起面板 + "自定义"按钮进入选中态
+      showCustomDuration(false);
+      syncDurationPresets();
+      // 按钮微反馈
+      btnConfirmTime.animate(
+        [{ transform: 'scale(1)' }, { transform: 'scale(0.96)' }, { transform: 'scale(1)' }],
+        { duration: 180, easing: 'ease-out' }
+      );
+    });
+
+    /* 核心交互热区：点击触发抽题 */
+    if (slotWrap) {
+      slotWrap.addEventListener("click", e => {
+        // 避免冒泡触发两次
+        e.preventDefault();
+        doSlotMachine();
+      });
+    }
+
+    /* 空格触发抽题（输入框/textarea 内不响应） */
+    document.addEventListener("keydown", e => {
+      if (e.code !== "Space") return;
+      const ae = document.activeElement;
+      if (!ae) { /* noop */ }
+      else if (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.contentEditable === "true") return;
+      e.preventDefault();
+      // 触发轻微按下反馈（在热区上）
+      if (slotWrap) {
+        slotWrap.style.transform = "scale(0.992)";
+        setTimeout(() => { slotWrap.style.transform = ""; }, 110);
+      }
+      doSlotMachine();
+    });
+
+    btnPlay.addEventListener("click", () => {
+      if (timerState === "done") {
+        // 再来一次：保留题目，仅重置时间
+        resetTimer();
+        return;
+      }
+      if (timerState === "running") {
+        pauseTimer();
+        return;
+      }
+      if (timerState === "paused") {
+        // 继续
+        startTimer();
+        return;
+      }
+      // idle
+      if (!currentTopicId) { showToast("请先抽取一个挑战"); return; }
+      // 训练时间为 0 不允许开始
+      if (!(totalSeconds > 0)) {
+        showToast("训练时间不能为 0");
+        return;
+      }
+      startTimer();
+    });
+
+    btnReset.addEventListener("click", () => {
+      if (timerState !== "idle" && timerState !== "done") resetTimer();
+    });
+
+    selectAllEl.addEventListener("change", () => {
+      if (selectAllEl.checked) topics.forEach(t => selectedIds.add(t.id));
+      else selectedIds.clear();
+      renderModalList();
+    });
+
+    btnDelSel.addEventListener("click", () => {
+      if (!selectedIds.size) return;
+      if (!confirm(`确定删除选中的 ${selectedIds.size} 个挑战吗？`)) return;
+      deleteTopics(new Set(selectedIds));
+      selectedIds.clear();
+    });
+
+    btnAddTopic.addEventListener("click", () => {
+      const gid = newTopicGroup && newTopicGroup.style.display !== 'none' ? newTopicGroup.value : null;
+      if (!addTopic(newTopicIn.value, gid)) { showToast("请输入挑战内容"); return; }
+      saveTopics();
+      newTopicIn.value = "";
+      renderModalList();
+      showToast("挑战已添加");
+    });
+
+    newTopicIn.addEventListener("keydown", e => { if (e.key === "Enter") btnAddTopic.click(); });
+    fileUpload.addEventListener("change", e => { const f = e.target.files[0]; if (f) handleFileUpload(f); });
+    btnLibrary.addEventListener("click", () => { closeScopeMenu(); openModal(); });
+    modalClose.addEventListener("click", closeModal);
+    modal.addEventListener("click", e => { if (e.target === modal) closeModal(); });
+
+    /* 抽题范围选择器交互 */
+    scopePill.addEventListener('click', function (e) {
+      e.stopPropagation();
+      toggleScopeMenu();
+    });
+    // 点击页面其他位置关闭 scope menu
+    document.addEventListener('click', function (e) {
+      if (!scopeMenu.classList.contains('open')) return;
+      if (e.target === scopePill || scopePill.contains(e.target)) return;
+      if (scopeMenu.contains(e.target)) return;
+      closeScopeMenu();
+    });
+    // 滚动 / resize 时也收起
+    window.addEventListener('resize', closeScopeMenu);
+    window.addEventListener('scroll', closeScopeMenu, true);
+    scopeMenu.addEventListener('click', function (e) { e.stopPropagation(); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape") {
+      // 关闭最上层的弹窗
+      if (moveGroupModal.classList.contains('open')) closeMoveGroupModal();
+      else if (uploadGroupModal.classList.contains('open')) closeUploadGroupModal();
+      else if (groupModal.classList.contains('open')) closeGroupModal();
+      else closeModal();
+    } });
+
+    /* ─── Group modal · 新建 / 重命名 ─── */
+    function openGroupCreateModal() {
+      groupModalMode = 'create';
+      groupModalTargetId = null;
+      groupModalTitle.textContent = '新建分组';
+      groupModalConfirm.textContent = '创建';
+      groupNameInput.value = '';
+      groupModal.classList.add('open');
+      setTimeout(function () { groupNameInput.focus(); }, 50);
+    }
+
+    function openGroupRenameModal(id) {
+      const g = groups.find(function (x) { return x.id === id; });
+      if (!g) return;
+      groupModalMode = 'rename';
+      groupModalTargetId = id;
+      groupModalTitle.textContent = '重命名分组';
+      groupModalConfirm.textContent = '保存';
+      groupNameInput.value = g.name;
+      groupModal.classList.add('open');
+      setTimeout(function () { groupNameInput.focus(); groupNameInput.select(); }, 50);
+    }
+
+    function closeGroupModal() {
+      groupModal.classList.remove('open');
+      groupNameInput.value = '';
+      groupModalTargetId = null;
+    }
+
+    function submitGroupModal() {
+      const name = groupNameInput.value;
+      if (groupModalMode === 'create') {
+        const res = createGroup(name);
+        if (!res.ok) { showToast(res.msg || '创建失败'); return; }
+        closeGroupModal();
+        renderModalList();
+        renderScopePill();
+        showToast(`已创建分组"${res.group.name}"`);
+      } else {
+        const res = renameGroup(groupModalTargetId, name);
+        if (!res.ok) { showToast(res.msg || '重命名失败'); return; }
+        closeGroupModal();
+        renderModalList();
+        renderScopePill();
+        showToast('分组已重命名');
+      }
+    }
+
+    btnNewGroup.addEventListener('click', openGroupCreateModal);
+    groupModalClose.addEventListener('click', closeGroupModal);
+    groupModalCancel.addEventListener('click', closeGroupModal);
+    groupModalConfirm.addEventListener('click', submitGroupModal);
+    groupModal.addEventListener('click', function (e) { if (e.target === groupModal) closeGroupModal(); });
+    groupNameInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') submitGroupModal();
+      if (e.key === 'Escape') closeGroupModal();
+    });
+
+    /* ─── Upload group modal · 上传前选择分组 ─── */
+    function openUploadGroupModal() {
+      // 填充选项：未分组 + 所有分组
+      uploadGroupSelect.innerHTML = '';
+      const o0 = document.createElement('option');
+      o0.value = ''; o0.textContent = '未分组';
+      uploadGroupSelect.appendChild(o0);
+      groups.forEach(function (g) {
+        const o = document.createElement('option');
+        o.value = g.id; o.textContent = g.name;
+        uploadGroupSelect.appendChild(o);
+      });
+      uploadGroupSelect.value = '';
+      uploadGroupModal.classList.add('open');
+    }
+
+    function closeUploadGroupModal() {
+      uploadGroupModal.classList.remove('open');
+      pendingUploadItems = null;
+      pendingUploadExt = null;
+    }
+
+    function confirmUploadGroup() {
+      if (!pendingUploadItems) { closeUploadGroupModal(); return; }
+      const gid = uploadGroupSelect.value || null;
+      const added = commitImportedTopics(pendingUploadItems, gid);
+      closeUploadGroupModal();
+      if (added > 0) { renderModalList(); showToast(`成功导入 ${added} 个挑战`); }
+      else showToast('没有可导入的挑战（重复或为空）');
+    }
+
+    uploadGroupModalClose.addEventListener('click', closeUploadGroupModal);
+    uploadGroupCancel.addEventListener('click', closeUploadGroupModal);
+    uploadGroupConfirm.addEventListener('click', confirmUploadGroup);
+    uploadGroupModal.addEventListener('click', function (e) { if (e.target === uploadGroupModal) closeUploadGroupModal(); });
+
+    /* ─── Move topics modal · 批量移动 ─── */
+    function openMoveGroupModal() {
+      if (!selectedIds.size) { showToast('请先选择挑战'); return; }
+      if (!groups.length) { showToast('当前没有可用的分组，请先创建一个分组'); return; }
+      pendingMoveIds = new Set(selectedIds);
+      moveGroupSelect.innerHTML = '';
+      const o0 = document.createElement('option');
+      o0.value = ''; o0.textContent = '未分组';
+      moveGroupSelect.appendChild(o0);
+      groups.forEach(function (g) {
+        const o = document.createElement('option');
+        o.value = g.id; o.textContent = g.name;
+        moveGroupSelect.appendChild(o);
+      });
+      moveGroupSelect.value = '';
+      moveGroupModal.classList.add('open');
+    }
+
+    function closeMoveGroupModal() {
+      moveGroupModal.classList.remove('open');
+      pendingMoveIds = null;
+    }
+
+    function confirmMoveGroup() {
+      if (!pendingMoveIds || !pendingMoveIds.size) { closeMoveGroupModal(); return; }
+      const gid = moveGroupSelect.value || null;
+      const res = moveTopicsToGroup(pendingMoveIds, gid);
+      closeMoveGroupModal();
+      selectedIds.clear();
+      renderModalList();
+      if (res.ok) showToast(`已移动 ${res.count} 个挑战`);
+    }
+
+    btnMoveSel.addEventListener('click', openMoveGroupModal);
+    moveGroupModalClose.addEventListener('click', closeMoveGroupModal);
+    moveGroupCancel.addEventListener('click', closeMoveGroupModal);
+    moveGroupConfirm.addEventListener('click', confirmMoveGroup);
+    moveGroupModal.addEventListener('click', function (e) { if (e.target === moveGroupModal) closeMoveGroupModal(); });
+  </script>
+</body>
+</html>
