@@ -54,6 +54,16 @@
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       padding: 0 20px 56px;
+      /* 移动端兜底：绝不允许 body 因任何 class 状态变成不可见 */
+      visibility: visible;
+      opacity: 1;
+    }
+
+    /* 移动端兜底：核心容器在脚本未运行时也保证可见，
+       避免某些移动浏览器在 JS 阻塞期间出现"白屏"假象 */
+    .header, .train-counter, .card, .card-section, .slot-wrap, .status-strip,
+    .duration-presets, .timer-display, .progress-bar, .primary-actions {
+      visibility: visible;
     }
 
     /* ─── Header ─── */
@@ -1668,6 +1678,69 @@
   </div>
 
   <script>
+    /* ============================================================
+       Mobile-Safety Guard · 移动端白屏保护
+       原则：
+       · 任何一个非关键功能报错，都不能中断脚本
+       · 任何一个 DOM 节点不存在，事件绑定就静默跳过
+       · AudioContext / localStorage 失败不阻塞页面
+       · 全局错误统一进 console.error，不向用户显示
+       ============================================================ */
+    (function () {
+      'use strict';
+
+      // 1) 全局同步错误拦截
+      try {
+        window.addEventListener('error', function (ev) {
+          try {
+            console.error('[guard] window error:', ev && (ev.message || ev.error || ev));
+          } catch (_) {}
+          // 不阻止默认；浏览器仍可能显示控制台错误，但 UI 不会受影响
+          return false;
+        });
+      } catch (_) {}
+
+      // 2) Promise 未捕获拒绝
+      try {
+        window.addEventListener('unhandledrejection', function (ev) {
+          try { console.error('[guard] unhandled rejection:', ev && (ev.reason || ev)); } catch (_) {}
+          try { ev.preventDefault(); } catch (_) {}
+        });
+      } catch (_) {}
+
+      // 3) 检测关键能力，若缺失给出兜底标记
+      window.__appCaps = {
+        audio: false,
+        storage: false,
+        raf: typeof window.requestAnimationFrame === 'function'
+      };
+      try { window.__appCaps.storage = !!window.localStorage; } catch (_) {}
+
+      // 4) 安全绑定事件：null/undefined 直接跳过
+      window.safeOn = function (el, evt, fn, opts) {
+        if (!el || typeof el.addEventListener !== 'function') return false;
+        try {
+          el.addEventListener(evt, fn, opts);
+          return true;
+        } catch (e) {
+          try { console.error('[guard] safeOn failed:', evt, e); } catch (_) {}
+          return false;
+        }
+      };
+
+      // 5) 整段初始化包在 DOMContentLoaded 内部，DOM 未就绪则自动等待
+      function whenReady(fn) {
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', fn, { once: true });
+        } else {
+          // defer 异步加载时，DOM 已就绪；下一帧执行
+          try { Promise.resolve().then(fn); }
+          catch (_) { setTimeout(fn, 0); }
+        }
+      }
+      window.__whenReady = whenReady;
+    })();
+
     /* ─── Constants ─── */
     const STORAGE_KEY      = "talk-tool-topics";
     const GROUP_STORAGE_KEY = "talk-tool-groups";
@@ -1887,13 +1960,20 @@
         osc.start(ctx.currentTime);
         osc.stop(ctx.currentTime + 0.02);
         audioReady = true;
-      } catch (_) {}
+        if (window.__appCaps) window.__appCaps.audio = true;
+      } catch (e) {
+        try { console.error('[audio] warmUp failed:', e); } catch (_) {}
+      }
     }
 
-    // 任何用户手势都触发一次预热
-    ['touchstart', 'mousedown', 'keydown'].forEach(function (evt) {
-      window.addEventListener(evt, warmUpAudio, { once: true, passive: true });
-    });
+    // 任何用户手势都触发一次预热（独立 try 包裹，避免影响页面初始化）
+    try {
+      ['touchstart', 'mousedown', 'keydown'].forEach(function (evt) {
+        window.addEventListener(evt, warmUpAudio, { once: true, passive: true });
+      });
+    } catch (e) {
+      try { console.error('[audio] register warmup listeners:', e); } catch (_) {}
+    }
 
     /**
      * 柔和敲击音：木质 tock，三角波 380→120 Hz
@@ -2009,31 +2089,38 @@
     }
 
     function loadTopics() {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        try {
-          const p = JSON.parse(saved);
-          if (Array.isArray(p) && p.length > 0) return p;
-        } catch (_) {}
-      }
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          try {
+            const p = JSON.parse(saved);
+            if (Array.isArray(p) && p.length > 0) return p;
+          } catch (_) {}
+        }
+      } catch (e) { console.error('[storage] read topics:', e); }
       const seeded = DEFAULT_TOPICS.map((t, i) => ({ id: "d" + i, ...t }));
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded));
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded)); } catch (_) {}
       return seeded;
     }
 
-    function saveTopics() { localStorage.setItem(STORAGE_KEY, JSON.stringify(topics)); }
+    function saveTopics() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(topics)); } catch (e) { console.error('[storage] save topics:', e); } }
 
     function loadDuration() {
-      const s = localStorage.getItem(TIME_KEY);
-      const n = parseInt(s, 10);
-      if (s == null || isNaN(n) || n < 1) return 180; // 默认 3 分钟 = 180 秒
-      // 旧版本以"分钟"存储（1~99）；新版本以"秒"存储（>= 1）。
-      // 兼容策略：以 99（含）作为分钟上限判定：原值 ≤ 99 且在没有明显"秒特征"时，按分钟换算。
-      // 由于新版本可能存 30秒 / 90秒 / 3600秒 等，30 也会被误判为 30 分钟。
-      // 这里采用一次性迁移：若值 ≤ 99，认为是旧版分钟数；若 > 99，认为是新版秒数。
-      if (n <= 99) return n * 60;
-      if (n <= 6000) return n;        // 100~6000 秒：直接当作秒数（新格式）
-      return 180;                    // 异常容错
+      try {
+        const s = localStorage.getItem(TIME_KEY);
+        const n = parseInt(s, 10);
+        if (s == null || isNaN(n) || n < 1) return 180; // 默认 3 分钟 = 180 秒
+        // 旧版本以"分钟"存储（1~99）；新版本以"秒"存储（>= 1）。
+        // 兼容策略：以 99（含）作为分钟上限判定：原值 ≤ 99 且在没有明显"秒特征"时，按分钟换算。
+        // 由于新版本可能存 30秒 / 90秒 / 3600秒 等，30 也会被误判为 30 分钟。
+        // 这里采用一次性迁移：若值 ≤ 99，认为是旧版分钟数；若 > 99，认为是新版秒数。
+        if (n <= 99) return n * 60;
+        if (n <= 6000) return n;        // 100~6000 秒：直接当作秒数（新格式）
+        return 180;                    // 异常容错
+      } catch (e) {
+        console.error('[storage] read duration:', e);
+        return 180;
+      }
     }
 
     function saveDuration(sec) {
@@ -2045,12 +2132,20 @@
     /** 安全读取 LocalStorage 的 JSON */
     function safeParse(raw, fallback) {
       if (raw == null) return fallback;
-      try { return JSON.parse(raw); } catch (_) { return fallback; }
+      try { return JSON.parse(raw); } catch (e) {
+        try { console.error('[storage] JSON.parse:', e); } catch (_) {}
+        return fallback;
+      }
     }
 
     function safeGet(key, fallback) {
-      try { return safeParse(localStorage.getItem(key), fallback); }
-      catch (_) { return fallback; }
+      try {
+        if (!window.__appCaps || !window.__appCaps.storage) return fallback;
+        return safeParse(localStorage.getItem(key), fallback);
+      } catch (e) {
+        try { console.error('[storage] get:', key, e); } catch (_) {}
+        return fallback;
+      }
     }
 
     function safeSet(key, value) {
@@ -2084,29 +2179,37 @@
 
     /** 创建分组 */
     function createGroup(name) {
-      const trimmed = String(name || '').trim();
-      if (!trimmed) return { ok: false, msg: '分组名称不能为空' };
-      if (isGroupNameTaken(trimmed)) return { ok: false, msg: '已存在同名分组' };
-      const g = { id: generateGroupId(), name: trimmed };
-      groups.push(g);
-      saveGroups();
-      // 同步主页面抽题范围显示
-      renderScopePill();
-      return { ok: true, group: g };
+      try {
+        const trimmed = String(name || '').trim();
+        if (!trimmed) return { ok: false, msg: '分组名称不能为空' };
+        if (isGroupNameTaken(trimmed)) return { ok: false, msg: '已存在同名分组' };
+        const g = { id: generateGroupId(), name: trimmed };
+        groups.push(g);
+        saveGroups();
+        try { renderScopePill(); } catch (e) { console.error('[group] scopePill:', e); }
+        return { ok: true, group: g };
+      } catch (e) {
+        try { console.error('[group] createGroup:', e); } catch (_) {}
+        return { ok: false, msg: '创建失败' };
+      }
     }
 
     /** 重命名分组 */
     function renameGroup(id, newName) {
-      const trimmed = String(newName || '').trim();
-      if (!trimmed) return { ok: false, msg: '分组名称不能为空' };
-      const g = groups.find(function (x) { return x.id === id; });
-      if (!g) return { ok: false, msg: '分组不存在' };
-      if (isGroupNameTaken(trimmed, id)) return { ok: false, msg: '已存在同名分组' };
-      g.name = trimmed;
-      saveGroups();
-      // 同步主页面抽题范围显示
-      renderScopePill();
-      return { ok: true };
+      try {
+        const trimmed = String(newName || '').trim();
+        if (!trimmed) return { ok: false, msg: '分组名称不能为空' };
+        const g = groups.find(function (x) { return x.id === id; });
+        if (!g) return { ok: false, msg: '分组不存在' };
+        if (isGroupNameTaken(trimmed, id)) return { ok: false, msg: '已存在同名分组' };
+        g.name = trimmed;
+        saveGroups();
+        try { renderScopePill(); } catch (e) { console.error('[group] scopePill:', e); }
+        return { ok: true };
+      } catch (e) {
+        try { console.error('[group] renameGroup:', e); } catch (_) {}
+        return { ok: false, msg: '重命名失败' };
+      }
     }
 
     /**
@@ -2114,45 +2217,55 @@
      * 分组本身被移除；话题不会被删除。
      */
     function deleteGroup(id) {
-      const idx = groups.findIndex(function (g) { return g.id === id; });
-      if (idx < 0) return { ok: false, msg: '分组不存在' };
-      const removedName = groups[idx].name;
-      groups.splice(idx, 1);
-      saveGroups();
+      try {
+        const idx = groups.findIndex(function (g) { return g.id === id; });
+        if (idx < 0) return { ok: false, msg: '分组不存在' };
+        const removedName = groups[idx].name;
+        groups.splice(idx, 1);
+        saveGroups();
 
-      let moved = 0;
-      topics.forEach(function (t) {
-        if (t && t.groupId === id) {
-          t.groupId = null;
-          moved++;
+        let moved = 0;
+        (topics || []).forEach(function (t) {
+          if (t && t.groupId === id) {
+            t.groupId = null;
+            moved++;
+          }
+        });
+        if (moved > 0) saveTopics();
+
+        // 同步删除折叠状态
+        try { removeCollapse({ kind: 'group', groupId: id }); } catch (_) {}
+
+        // 同步主页面抽题范围：如果正选中这个被删除的分组，则回退到全部挑战
+        if (trainingScope && trainingScope.type === 'group' && trainingScope.groupId === id) {
+          try { setTrainingScope({ type: 'all' }); } catch (_) {}
         }
-      });
-      if (moved > 0) saveTopics();
 
-      // 同步删除折叠状态
-      removeCollapse({ kind: 'group', groupId: id });
-
-      // 同步主页面抽题范围：如果正选中这个被删除的分组，则回退到全部挑战
-      if (trainingScope.type === 'group' && trainingScope.groupId === id) {
-        setTrainingScope({ type: 'all' });
+        return { ok: true, movedCount: moved, removedName: removedName };
+      } catch (e) {
+        try { console.error('[group] deleteGroup:', e); } catch (_) {}
+        return { ok: false, msg: '删除失败' };
       }
-
-      return { ok: true, movedCount: moved, removedName: removedName };
     }
 
     /** 把一组话题移动到指定分组（groupId === null 表示未分组） */
     function moveTopicsToGroup(topicIds, groupId) {
-      const ids = topicIds instanceof Set ? topicIds : new Set(topicIds);
-      if (!ids.size) return { ok: false, count: 0 };
-      let count = 0;
-      topics.forEach(function (t) {
-        if (ids.has(t.id)) {
-          t.groupId = groupId || null;
-          count++;
-        }
-      });
-      if (count > 0) saveTopics();
-      return { ok: true, count: count };
+      try {
+        const ids = topicIds instanceof Set ? topicIds : new Set(topicIds);
+        if (!ids.size) return { ok: false, count: 0 };
+        let count = 0;
+        (topics || []).forEach(function (t) {
+          if (t && ids.has(t.id)) {
+            t.groupId = groupId || null;
+            count++;
+          }
+        });
+        if (count > 0) saveTopics();
+        return { ok: true, count: count };
+      } catch (e) {
+        try { console.error('[group] moveTopicsToGroup:', e); } catch (_) {}
+        return { ok: false, count: 0 };
+      }
     }
 
     /** 获取话题所属分组的展示名（用于卡片 tag） */
@@ -2169,6 +2282,11 @@
      */
     function migrateOldTopics() {
       try {
+        // storage 不可用（隐私模式 / 异常）则跳过迁移
+        if (!window.__appCaps || !window.__appCaps.storage) {
+          localStorage.setItem(MIGRATION_FLAG, '1'); // 仍标记，但安全失败不抛
+          return;
+        }
         if (localStorage.getItem(MIGRATION_FLAG) === '1') return;
 
         // 1) 迁移话题
@@ -2252,15 +2370,18 @@
     }
 
     function setTrainingScope(next) {
-      trainingScope = next;
-      saveTrainingScope();
-      renderScopePill();
-      renderScopeMenu();
-      renderSlotBadge();
+      try {
+        trainingScope = next;
+        saveTrainingScope();
+        renderScopePill();
+        renderScopeMenu();
+        renderSlotBadge();
+      } catch (e) { try { console.error('[scope] setTrainingScope:', e); } catch (_) {} }
     }
 
     function renderScopePill() {
-      scopePillText.textContent = getScopeLabel();
+      try { if (scopePillText) scopePillText.textContent = getScopeLabel(); }
+      catch (e) { try { console.error('[render] scopePill:', e); } catch (_) {} }
     }
 
     /**
@@ -2323,6 +2444,7 @@
     }
 
     function renderScopeMenu() {
+      if (!scopeMenu) return;
       const items = buildScopeMenuItems();
       scopeMenu.innerHTML = '';
       let activeKey = trainingScope.type;
@@ -2357,30 +2479,37 @@
         cnt.className = 'scope-count';
         cnt.textContent = String(it.count);
         row.append(check, name, cnt);
-        row.addEventListener('click', function () {
+        safeOn(row, 'click', function () {
           if (it.type === 'all')         setTrainingScope({ type: 'all' });
           else if (it.type === 'ungrouped') setTrainingScope({ type: 'ungrouped' });
           else if (it.type === 'group')     setTrainingScope({ type: 'group', groupId: it.groupId });
           closeScopeMenu();
         });
-        scopeMenu.appendChild(row);
+        if (scopeMenu) scopeMenu.appendChild(row);
       });
     }
 
     function openScopeMenu() {
-      renderScopeMenu();
-      scopeMenu.classList.add('open');
-      scopePill.classList.add('open');
+      try {
+        renderScopeMenu();
+        if (scopeMenu) scopeMenu.classList.add('open');
+        if (scopePill) scopePill.classList.add('open');
+      } catch (e) { try { console.error('[scope] openScopeMenu:', e); } catch (_) {} }
     }
 
     function closeScopeMenu() {
-      scopeMenu.classList.remove('open');
-      scopePill.classList.remove('open');
+      try {
+        if (scopeMenu) scopeMenu.classList.remove('open');
+        if (scopePill) scopePill.classList.remove('open');
+      } catch (_) {}
     }
 
     function toggleScopeMenu() {
-      if (scopeMenu.classList.contains('open')) closeScopeMenu();
-      else openScopeMenu();
+      try {
+        if (!scopeMenu) return;
+        if (scopeMenu.classList.contains('open')) closeScopeMenu();
+        else openScopeMenu();
+      } catch (_) {}
     }
 
     /* ─── Group Collapse（分组折叠） ─── */
@@ -2417,10 +2546,13 @@
     }
 
     function showToast(msg) {
-      toastEl.textContent = msg;
-      toastEl.classList.add("show");
-      clearTimeout(showToast._t);
-      showToast._t = setTimeout(() => toastEl.classList.remove("show"), 2400);
+      try {
+        if (!toastEl) return;
+        toastEl.textContent = msg;
+        toastEl.classList.add("show");
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(function () { try { toastEl.classList.remove("show"); } catch (_) {} }, 2400);
+      } catch (e) { try { console.error('[toast]:', e); } catch (_) {} }
     }
 
     function formatTime(sec) {
@@ -2453,32 +2585,34 @@
     }
 
     function showTopic(item) {
-      if (!item) return;
-      currentTopicId = item.id;
-      lastTopicId = item.id;
-
-      // 强制写入 A 层
-      const topicA = document.querySelector('#slotA .topic');
-      if (topicA) {
-        topicA.textContent = item.text;
-        topicA.classList.remove("empty", "blur", "ghost");
-      }
-
-      // 同步 slot 双层结构，复位到 A 层
       try {
-        const slotA = document.getElementById('slotA');
-        const slotB = document.getElementById('slotB');
-        if (slotA) slotA.classList.add('visible');
-        if (slotB) {
-          slotB.classList.remove('visible');
-          const topicB = slotB.querySelector('.topic');
-          if (topicB) topicB.textContent = '';
-        }
-        slotCurrentLayer = 'A';
-      } catch (_) {}
+        if (!item) return;
+        currentTopicId = item.id;
+        lastTopicId = item.id;
 
-      if (modal.classList.contains("open")) renderModalList();
-      syncUiState();
+        // 强制写入 A 层
+        const topicA = document.querySelector('#slotA .topic');
+        if (topicA) {
+          topicA.textContent = item.text;
+          topicA.classList.remove("empty", "blur", "ghost");
+        }
+
+        // 同步 slot 双层结构，复位到 A 层
+        try {
+          const slotA = document.getElementById('slotA');
+          const slotB = document.getElementById('slotB');
+          if (slotA) slotA.classList.add('visible');
+          if (slotB) {
+            slotB.classList.remove('visible');
+            const topicB = slotB.querySelector('.topic');
+            if (topicB) topicB.textContent = '';
+          }
+          slotCurrentLayer = 'A';
+        } catch (_) {}
+
+        if (modal && modal.classList && modal.classList.contains("open")) { try { renderModalList(); } catch (_) {} }
+        try { syncUiState(); } catch (e) { console.error('[ui] syncUiState:', e); }
+      } catch (e) { try { console.error('[ui] showTopic:', e); } catch (_) {} }
     }
 
     /* ─── Daily Train Count · 今日训练次数 ───
@@ -2497,18 +2631,20 @@
 
     function loadDailyCount() {
       try {
+        if (!window.__appCaps || !window.__appCaps.storage) return 0;
         const savedDate = localStorage.getItem(COUNT_DATE_KEY);
         const today = _todayKey();
         if (savedDate !== today) {
           // 跨日或首次访问：归零
-          localStorage.setItem(COUNT_DATE_KEY, today);
-          localStorage.setItem(COUNT_KEY, "0");
+          try { localStorage.setItem(COUNT_DATE_KEY, today); } catch (_) {}
+          try { localStorage.setItem(COUNT_KEY, "0"); } catch (_) {}
           return 0;
         }
         const raw = localStorage.getItem(COUNT_KEY);
         const n = parseInt(raw || "0", 10);
         return Number.isFinite(n) && n >= 0 ? n : 0;
-      } catch (_) {
+      } catch (e) {
+        try { console.error('[storage] loadDailyCount:', e); } catch (_) {}
         return 0;
       }
     }
@@ -2528,43 +2664,50 @@
     }
 
     function renderTrainCount(n, animate) {
-      if (!trainCountEl) return;
-      trainCountEl.textContent = String(n);
-      if (animate) {
-        const wrap = trainCountEl.closest(".train-counter");
-        if (wrap) {
-          wrap.classList.remove("bump");
-          // eslint-disable-next-line no-unused-expressions
-          wrap.offsetWidth;
-          wrap.classList.add("bump");
-          setTimeout(() => wrap.classList.remove("bump"), 360);
+      try {
+        if (!trainCountEl) return;
+        trainCountEl.textContent = String(n);
+        if (animate) {
+          const wrap = trainCountEl.closest(".train-counter");
+          if (wrap) {
+            wrap.classList.remove("bump");
+            // eslint-disable-next-line no-unused-expressions
+            wrap.offsetWidth;
+            wrap.classList.add("bump");
+            setTimeout(function () { try { wrap.classList.remove("bump"); } catch (_) {} }, 360);
+          }
         }
-      }
+      } catch (e) { try { console.error('[ui] renderTrainCount:', e); } catch (_) {} }
     }
 
     /* ─── Timer ─── */
     function onTimerDone() {
-      timerState = "done";
-      timerEl.classList.add("done");
-      timerEl.classList.remove("inactive", "running");
-      progressEl.classList.add("done");
-      playBeep();
+      try {
+        timerState = "done";
+        if (timerEl) {
+          timerEl.classList.add("done");
+          timerEl.classList.remove("inactive", "running");
+        }
+        if (progressEl) progressEl.classList.add("done");
+        try { playBeep(); } catch (e) { console.error('[audio] beep:', e); }
 
-      // 训练完成 → 计数 +1
-      const newCount = incrementDailyCount();
+        // 训练完成 → 计数 +1
+        let newCount = 0;
+        try { newCount = incrementDailyCount(); } catch (e) { console.error('[counter] increment:', e); }
 
-      // 请求浏览器通知（首次会弹权限；显式调用以保证权限流程明确）
-      tryRequestNotificationPermission();
+        // 请求浏览器通知（首次会弹权限；显式调用以保证权限流程明确）
+        try { tryRequestNotificationPermission(); } catch (e) { console.error('[notify] requestPermission:', e); }
 
-      // 浏览器通知
-      if ("Notification" in window && Notification.permission === "granted") {
-        try {
-          new Notification("B. Challenge", { body: `完成了一次挑战 · 今日已训练 ${newCount} 次` });
-        } catch (_) {}
-      }
+        // 浏览器通知
+        if ("Notification" in window && Notification.permission === "granted") {
+          try {
+            new Notification("B. Challenge", { body: `完成了一次挑战 · 今日已训练 ${newCount} 次` });
+          } catch (e) { try { console.error('[notify] post:', e); } catch (_) {} }
+        }
 
-      updateControls();
-      syncUiState();
+        try { updateControls(); } catch (e) { console.error('[controls] updateControls:', e); }
+        try { syncUiState(); } catch (e) { console.error('[ui] syncUiState:', e); }
+      } catch (e) { try { console.error('[timer] onTimerDone:', e); } catch (_) {} }
     }
 
     /**
@@ -2572,15 +2715,18 @@
      * 满足现代浏览器的"用户手势期间调用"要求 —— 由调用栈确保（onTimerDone 仅在用户点击开始后才会触发）。
      */
     function tryRequestNotificationPermission() {
-      if (!("Notification" in window)) return;
-      if (Notification.permission !== "default") return;
       try {
-        Notification.requestPermission().then(function () {}).catch(function () {});
+        if (!("Notification" in window)) return;
+        if (typeof Notification === 'undefined') return;
+        if (!Notification || Notification.permission !== "default") return;
+        try {
+          Notification.requestPermission().then(function () {}).catch(function (e) { try { console.error('[notify] permission:', e); } catch (_) {} });
+        } catch (_) {}
       } catch (_) {}
     }
 
     function stopTimer() {
-      if (interval) { clearInterval(interval); interval = null; }
+      try { if (interval) { clearInterval(interval); interval = null; } } catch (_) {}
     }
 
     /**
@@ -2592,68 +2738,92 @@
      *   - 抽题按钮文字
      */
     function updateControls() {
-      const running = timerState === "running";
-      const paused  = timerState === "paused";
-      const done    = timerState === "done";
-      const idle    = timerState === "idle";
+      try {
+        const running = timerState === "running";
+        const paused  = timerState === "paused";
+        const done    = timerState === "done";
+        const idle    = timerState === "idle";
 
-      // 主按钮文字
-      if (running) {
-        btnPlay.querySelector('.btn-primary-icon').textContent = '⏸';
-      if (btnPlayLabel) btnPlayLabel.textContent = '暂停';
-      btnPlay.dataset.mode = 'pause';
-    } else if (paused) {
-      btnPlay.querySelector('.btn-primary-icon').textContent = '▶';
-      if (btnPlayLabel) btnPlayLabel.textContent = '继续';
-      btnPlay.dataset.mode = 'resume';
-    } else if (done) {
-      btnPlay.querySelector('.btn-primary-icon').textContent = '🔁';
-      if (btnPlayLabel) btnPlayLabel.textContent = '再来一次';
-      btnPlay.dataset.mode = 'restart';
-    } else {
-      btnPlay.querySelector('.btn-primary-icon').textContent = '▶';
-      if (btnPlayLabel) btnPlayLabel.textContent = '开始吧';
-        btnPlay.dataset.mode = 'start';
-      }
+        const icon = btnPlay && btnPlay.querySelector ? btnPlay.querySelector('.btn-primary-icon') : null;
 
-      // 时间输入禁用（运行/暂停时不允许改）
-      syncCustomDurationLock();
+        // 主按钮文字
+        if (running) {
+          if (icon) icon.textContent = '⏸';
+          if (btnPlayLabel) btnPlayLabel.textContent = '暂停';
+          if (btnPlay) btnPlay.dataset.mode = 'pause';
+        } else if (paused) {
+          if (icon) icon.textContent = '▶';
+          if (btnPlayLabel) btnPlayLabel.textContent = '继续';
+          if (btnPlay) btnPlay.dataset.mode = 'resume';
+        } else if (done) {
+          if (icon) icon.textContent = '🔁';
+          if (btnPlayLabel) btnPlayLabel.textContent = '再来一次';
+          if (btnPlay) btnPlay.dataset.mode = 'restart';
+        } else {
+          if (icon) icon.textContent = '▶';
+          if (btnPlayLabel) btnPlayLabel.textContent = '开始吧';
+          if (btnPlay) btnPlay.dataset.mode = 'start';
+        }
 
-      // 重置按钮 dimmed
-      btnReset.classList.toggle('dimmed', idle || done);
+        // 时间输入禁用（运行/暂停时不允许改）
+        try { syncCustomDurationLock(); } catch (e) { console.error('[controls] syncCustomDurationLock:', e); }
 
-      // 计时器状态色
-      timerEl.classList.toggle('running', running);
+        // 重置按钮 dimmed
+        if (btnReset) btnReset.classList.toggle('dimmed', idle || done);
+
+        // 计时器状态色
+        if (timerEl) timerEl.classList.toggle('running', running);
+      } catch (e) { try { console.error('[controls] updateControls:', e); } catch (_) {} }
     }
 
     function startTimer() {
-      stopTimer();
-      timerState = "running";
-      progressEl.className = "progress-fill";
-      progressEl.style.width = "0%";
-      updateControls();
-      interval = setInterval(() => {
-        remaining--;
-        timerEl.textContent = formatTime(remaining);
-        const pct = (totalSeconds - remaining) / totalSeconds * 100;
-        progressEl.style.width = pct + "%";
-        if (pct > 80) progressEl.classList.add("almost");
-        if (remaining <= 0) { stopTimer(); onTimerDone(); }
-      }, 1000);
+      try {
+        stopTimer();
+        timerState = "running";
+        if (progressEl) {
+          progressEl.className = "progress-fill";
+          progressEl.style.width = "0%";
+        }
+        try { updateControls(); } catch (e) { console.error('[controls] updateControls:', e); }
+        interval = setInterval(function () {
+          try {
+            remaining--;
+            if (timerEl) timerEl.textContent = formatTime(remaining);
+            if (progressEl) {
+              const pct = (totalSeconds - remaining) / totalSeconds * 100;
+              progressEl.style.width = pct + "%";
+              if (pct > 80) progressEl.classList.add("almost");
+            }
+            if (remaining <= 0) { stopTimer(); onTimerDone(); }
+          } catch (e) {
+            try { console.error('[timer] tick:', e); } catch (_) {}
+          }
+        }, 1000);
+      } catch (e) { try { console.error('[timer] startTimer:', e); } catch (_) {} }
     }
 
-    function pauseTimer() { stopTimer(); timerState = "paused"; updateControls(); syncUiState(); }
+    function pauseTimer() {
+      try { stopTimer(); timerState = "paused"; } catch (e) { console.error('[timer] pause:', e); }
+      try { updateControls(); } catch (e) { console.error('[controls]:', e); }
+      try { syncUiState(); } catch (e) { console.error('[ui]:', e); }
+    }
 
     function resetTimer() {
-      stopTimer();
-      timerState = "idle";
-      remaining = totalSeconds;
-      timerEl.textContent = formatTime(totalSeconds);
-      timerEl.classList.remove("done", "running");
-      progressEl.style.width = "0%";
-      progressEl.className = "progress-fill";
-      updateControls();
-      syncUiState();
+      try { stopTimer(); } catch (e) { console.error('[timer] stopTimer:', e); }
+      try {
+        timerState = "idle";
+        remaining = totalSeconds;
+        if (timerEl) {
+          timerEl.textContent = formatTime(totalSeconds);
+          timerEl.classList.remove("done", "running");
+        }
+        if (progressEl) {
+          progressEl.style.width = "0%";
+          progressEl.className = "progress-fill";
+        }
+      } catch (e) { try { console.error('[timer] reset state:', e); } catch (_) {} }
+      try { updateControls(); } catch (e) { console.error('[controls]:', e); }
+      try { syncUiState(); } catch (e) { console.error('[ui]:', e); }
     }
 
     /**
@@ -2673,41 +2843,43 @@
     }
 
     function syncUiState() {
-      const s = deriveUiState();
-      const displayState = slotRunning ? 'spinning' : s;
-      statusStrip.dataset.state = displayState;
+      try {
+        const s = deriveUiState();
+        const displayState = slotRunning ? 'spinning' : s;
+        if (statusStrip) statusStrip.dataset.state = displayState;
 
-      // 状态条主文案 + icon（合并 statusIcon）
-      const stateMap = {
-        idle:     { icon: '💡', text: '提示：请先点击上方区域抽取题目' },
-        spinning: { icon: '🎲', text: '正在抽取，别急…' },
-        ready:    { icon: '✅', text: '已就绪，随时可以点击下方【开始吧】' },
-        running:  { icon: '▶️', text: '正在挑战中' },
-        paused:   { icon: '⏸',  text: '已暂停，随时继续' },
-        done:     { icon: '🎉', text: '完成了一次挑战，很棒' }
-      };
-      const cur = stateMap[displayState] || stateMap.idle;
-      if (statusIcon) statusIcon.textContent = cur.icon;
-      statusText.textContent = cur.text;
-      if (timerSub) timerSub.textContent = displayState === 'running' ? '剩余时间' : (displayState === 'done' ? '很棒' : '倒计时');
+        // 状态条主文案 + icon（合并 statusIcon）
+        const stateMap = {
+          idle:     { icon: '💡', text: '提示：请先点击上方区域抽取题目' },
+          spinning: { icon: '🎲', text: '正在抽取，别急…' },
+          ready:    { icon: '✅', text: '已就绪，随时可以点击下方【开始吧】' },
+          running:  { icon: '▶️', text: '正在挑战中' },
+          paused:   { icon: '⏸',  text: '已暂停，随时继续' },
+          done:     { icon: '🎉', text: '完成了一次挑战，很棒' }
+        };
+        const cur = stateMap[displayState] || stateMap.idle;
+        if (statusIcon) statusIcon.textContent = cur.icon;
+        if (statusText) statusText.textContent = cur.text;
+        if (timerSub) timerSub.textContent = displayState === 'running' ? '剩余时间' : (displayState === 'done' ? '很棒' : '倒计时');
 
-      // 计时器是否显示（idle/spinning 时隐藏大字号，避免视觉冗余）
-      const showTimer = (displayState !== 'idle' && displayState !== 'spinning');
-      timerDisplay.style.display = showTimer ? 'flex' : 'none';
-      progressBar.style.display  = showTimer ? 'block' : 'none';
+        // 计时器是否显示（idle/spinning 时隐藏大字号，避免视觉冗余）
+        const showTimer = (displayState !== 'idle' && displayState !== 'spinning');
+        if (timerDisplay) timerDisplay.style.display = showTimer ? 'flex' : 'none';
+        if (progressBar)  progressBar.style.display  = showTimer ? 'block' : 'none';
 
-      // 卡片高亮
-      trainCard.classList.toggle('is-running', displayState === 'running');
+        // 卡片高亮
+        if (trainCard) trainCard.classList.toggle('is-running', displayState === 'running');
 
-      // 热区标记：是否已抽到题（控制 CTA 角标显隐）
-      if (slotWrap) slotWrap.dataset.hasTopic = (s === 'idle') ? '0' : '1';
+        // 热区标记：是否已抽到题（控制 CTA 角标显隐）
+        if (slotWrap) slotWrap.dataset.hasTopic = (s === 'idle') ? '0' : '1';
 
-      // idle 状态：隐藏内嵌分类标签；非 idle：实时显示当前 scope
-      if (s === 'idle') {
-        if (slotBadge) slotBadge.classList.remove('show');
-      } else {
-        renderSlotBadge();
-      }
+        // idle 状态：隐藏内嵌分类标签；非 idle：实时显示当前 scope
+        if (s === 'idle') {
+          if (slotBadge) slotBadge.classList.remove('show');
+        } else {
+          try { renderSlotBadge(); } catch (e) { console.error('[ui] renderSlotBadge:', e); }
+        }
+      } catch (e) { try { console.error('[ui] syncUiState:', e); } catch (_) {} }
     }
 
     /* ─── Slot Machine · rAF 多阶段减速动画 ───
@@ -2848,115 +3020,122 @@
      * 不嵌套 setTimeout，避免累积误差
      */
     function slotLoop(now) {
-      if (!slotRunning) return;
+      try {
+        if (!slotRunning) return;
 
-      const elapsed = now - slotStartTime;
+        const elapsed = now - slotStartTime;
 
-      // 1) 超过总时长 → 收尾
-      if (elapsed >= SLOT_TOTAL_TIME) {
-        finishSlot();
-        return;
-      }
-
-      // 2) 是否到下一次跳字时机
-      //    第一次跳字立即触发（让用户立刻看到动画开始）
-      const sinceLastStep = elapsed - (slotLoop._last || 0);
-      const nextInterval = computeNextInterval(elapsed);
-
-      if (slotStepCount === 0 || sinceLastStep >= nextInterval) {
-        slotLoop._last = elapsed;
-        slotStepCount++;
-
-        // 写入新文本（最终揭示阶段不切换，由 finishSlot 负责）
-        const text = pickRandomFromPool();
-        swapLayers(text);
-
-        // 音效：随阶段调整
-        //   · Phase 1（快速滚动）: 正常音量、标准音高
-        //   · Phase 2（减速）: 略降音量、音高
-        //   · Phase 3（停顿）: 不播 tick（避免停顿期间的音效破坏节奏）
-        if (!isInPausePhase(elapsed)) {
-          const progress = elapsed / SLOT_TOTAL_TIME;
-          const vol = progress < 0.35 ? 0.14 : 0.10;
-          const pitchScale = 1 - progress * 0.20; // 前期 1.0 → 后期 0.80
-          playClick(vol, pitchScale);
+        // 1) 超过总时长 → 收尾
+        if (elapsed >= SLOT_TOTAL_TIME) {
+          finishSlot();
+          return;
         }
-      }
 
-      // 3) 继续下一帧
-      slotRafId = requestAnimationFrame(slotLoop);
+        // 2) 是否到下一次跳字时机
+        const sinceLastStep = elapsed - (slotLoop._last || 0);
+        const nextInterval = computeNextInterval(elapsed);
+
+        if (slotStepCount === 0 || sinceLastStep >= nextInterval) {
+          slotLoop._last = elapsed;
+          slotStepCount++;
+
+          const text = pickRandomFromPool();
+          swapLayers(text);
+
+          if (!isInPausePhase(elapsed)) {
+            const progress = elapsed / SLOT_TOTAL_TIME;
+            const vol = progress < 0.35 ? 0.14 : 0.10;
+            const pitchScale = 1 - progress * 0.20;
+            try { playClick(vol, pitchScale); } catch (e) { console.error('[audio] playClick:', e); }
+          }
+        }
+
+        // 3) 继续下一帧
+        if (typeof requestAnimationFrame === 'function') {
+          slotRafId = requestAnimationFrame(slotLoop);
+        } else {
+          setTimeout(function () { slotLoop(Date.now() - slotStartTime + (window.__appCaps && window.__appCaps.t0 || 0)); }, 16);
+        }
+      } catch (e) {
+        try { console.error('[slot] loop:', e); } catch (_) {}
+        // 异常后立即收尾，避免无限空转
+        try { finishSlot(); } catch (_) {}
+      }
     }
 
     /**
      * 收尾：把 slotFinalTopic 写入当前可见层 + 落地动画 + 开箱音 + 解锁按钮
      */
     function finishSlot() {
-      slotRunning = false;
-      slotRafId = 0;
-      slotLoop._last = 0;
+      try {
+        slotRunning = false;
+        slotRafId = 0;
+        slotLoop._last = 0;
 
-      const final = slotFinalTopic;
-      slotFinalTopic = null;
+        const final = slotFinalTopic;
+        slotFinalTopic = null;
 
-      if (!final) {
-        unlockDrawButton();
-        slotWrap.classList.remove('spinning');
-        return;
+        if (!final) {
+          unlockDrawButton();
+          if (slotWrap) slotWrap.classList.remove('spinning');
+          return;
+        }
+
+        // 揭晓音：柔和 pop
+        try { playRevealSound(); } catch (e) { console.error('[audio] reveal:', e); }
+
+        // 把 finalTopic 写入当前可见层
+        const finalLayerId = slotCurrentLayer === 'A' ? 'slotA' : 'slotB';
+        const finalLayer = document.getElementById(finalLayerId);
+        if (finalLayer) {
+          setSlotText(finalLayer, final.text);
+          finalLayer.classList.add('visible');
+          const otherId = slotCurrentLayer === 'A' ? 'slotB' : 'slotA';
+          const other = document.getElementById(otherId);
+          if (other) other.classList.remove('visible');
+        }
+
+        // 揭晓入场：scale + opacity（用 land 类）
+        const topicNode = finalLayer ? finalLayer.querySelector('.topic') : null;
+        if (topicNode) {
+          topicNode.classList.remove('land');
+          // eslint-disable-next-line no-unused-expressions
+          topicNode.offsetWidth;
+          topicNode.classList.add('land');
+        }
+
+        // 题目区域短暂高光（≈450ms 一次性）
+        if (slotWrap) {
+          slotWrap.classList.remove('reveal');
+          // eslint-disable-next-line no-unused-expressions
+          slotWrap.offsetWidth;
+          slotWrap.classList.add('reveal');
+          setTimeout(function () { try { slotWrap.classList.remove('reveal'); } catch (_) {} }, 450);
+        }
+
+        // 退出 spinning 态
+        if (slotWrap) slotWrap.classList.remove('spinning');
+
+        // 揭晓后更新内嵌分类标签
+        try { renderSlotBadge(); } catch (e) { console.error('[slot] renderSlotBadge:', e); }
+
+        // 更新全局状态
+        currentTopicId = final.id;
+        lastTopicId = final.id;
+        if (modal && modal.classList && modal.classList.contains('open')) { try { renderModalList(); } catch (_) {} }
+
+        // 同步 UI
+        try { syncUiState(); } catch (e) { console.error('[slot] syncUiState:', e); }
+
+        // 揭晓入场动画结束后解锁按钮 + 移除 land
+        setTimeout(function () {
+          try { if (topicNode) topicNode.classList.remove('land'); } catch (_) {}
+          try { unlockDrawButton(); } catch (_) {}
+        }, 450);
+      } catch (e) {
+        try { console.error('[slot] finishSlot:', e); } catch (_) {}
+        try { unlockDrawButton(); } catch (_) {}
       }
-
-      // 揭晓音：柔和 pop
-      playRevealSound();
-
-      // 把 finalTopic 写入当前可见层
-      const finalLayerId = slotCurrentLayer === 'A' ? 'slotA' : 'slotB';
-      const finalLayer = document.getElementById(finalLayerId);
-      if (finalLayer) {
-        setSlotText(finalLayer, final.text);
-        finalLayer.classList.add('visible');
-        const otherId = slotCurrentLayer === 'A' ? 'slotB' : 'slotA';
-        const other = document.getElementById(otherId);
-        if (other) other.classList.remove('visible');
-      }
-
-      // 揭晓入场：scale + opacity 轻微缩放（用 land 类）
-      const topicNode = finalLayer ? finalLayer.querySelector('.topic') : null;
-      if (topicNode) {
-        topicNode.classList.remove('land');
-        // eslint-disable-next-line no-unused-expressions
-        topicNode.offsetWidth;
-        topicNode.classList.add('land');
-      }
-
-      // 题目区域短暂高光（≈450ms 一次性）
-      slotWrap.classList.remove('reveal');
-      // eslint-disable-next-line no-unused-expressions
-      slotWrap.offsetWidth;
-      slotWrap.classList.add('reveal');
-      setTimeout(function () {
-        slotWrap.classList.remove('reveal');
-      }, 450);
-
-      // 退出 spinning 态
-      slotWrap.classList.remove('spinning');
-
-      // 揭晓后更新内嵌分类标签
-      renderSlotBadge();
-
-      // 更新全局状态
-      currentTopicId = final.id;
-      lastTopicId = final.id;
-      // 在每次真正"结束一次挑战"（计时器 done 后）增加当日次数；
-      // 这里不增加 —— 抽题不等于完成训练。
-      if (modal.classList.contains('open')) renderModalList();
-
-      // 同步 UI
-      syncUiState();
-
-      // 揭晓入场动画结束后解锁按钮 + 移除 land
-      setTimeout(function () {
-        if (topicNode) topicNode.classList.remove('land');
-        unlockDrawButton();
-      }, 450);
     }
 
     function lockDrawButton() {
@@ -2984,59 +3163,67 @@
      * 主入口：点击抽题按钮 / 空格触发
      */
     function doSlotMachine() {
-      if (slotRunning) return;        // 防重入
+      try {
+        if (slotRunning) return;        // 防重入
 
-      // 按当前抽题范围构造候选池
-      const pool = getScopedTopics();
-      if (!pool.length) {
-        if (trainingScope.type === 'group') {
-          const g = groups.find(function (x) { return x.id === trainingScope.groupId; });
-          showToast(`「${g ? g.name : '当前'}」分组还没有题目`);
-        } else if (trainingScope.type === 'ungrouped') {
-          showToast('未分组暂无挑战，请先添加');
-        } else {
-          showToast('挑战库为空，请先添加挑战');
+        // 按当前抽题范围构造候选池
+        const pool = getScopedTopics();
+        if (!pool.length) {
+          if (trainingScope.type === 'group') {
+            const g = groups.find(function (x) { return x.id === trainingScope.groupId; });
+            showToast(`「${g ? g.name : '当前'}」分组还没有题目`);
+          } else if (trainingScope.type === 'ungrouped') {
+            showToast('未分组暂无挑战，请先添加');
+          } else {
+            showToast('挑战库为空，请先添加挑战');
+          }
+          return;
         }
-        return;
+
+        if (timerState === 'running') pauseTimer();
+        resetTimer();
+
+        // 关键：提前确定最终话题（在动画开始前锁定）
+        const final = pickTopic();
+        if (!final) {
+          showToast('抽题失败');
+          return;
+        }
+        slotFinalTopic = final;
+
+        // 构造动画候选池
+        slotPool = pool;
+        slotLastText = final.text;
+        slotStepCount = 0;
+        slotLoop._last = 0;
+
+        // 重置双层
+        slotCurrentLayer = 'A';
+
+        // UI 进入 spinning 态
+        if (slotWrap) slotWrap.classList.add('spinning');
+        lockDrawButton();
+
+        // 预热音频
+        try { warmUpAudio(); } catch (e) { console.error('[audio] warmUp:', e); }
+        const ctx = getAudioCtx();
+        if (ctx && ctx.state === 'suspended') {
+          try { ctx.resume(); } catch (_) {}
+        }
+
+        // 启动 rAF 主循环
+        slotRunning = true;
+        slotStartTime = (window.performance && typeof performance.now === 'function') ? performance.now() : Date.now();
+        if (typeof requestAnimationFrame === 'function') {
+          slotRafId = requestAnimationFrame(slotLoop);
+        } else {
+          setTimeout(slotLoop, 16);
+        }
+      } catch (e) {
+        console.error('[slot] doSlotMachine:', e);
+        try { unlockDrawButton(); } catch (_) {}
+        try { if (slotWrap) slotWrap.classList.remove('spinning'); } catch (_) {}
       }
-
-      if (timerState === 'running') pauseTimer();
-      resetTimer();
-
-      // 关键：提前确定最终话题（在动画开始前锁定）
-      // pickTopic() 内部会处理 "避免与上一次相同" 的逻辑
-      const final = pickTopic();
-      if (!final) {
-        // 池子理论上不会空（前面已检查），保险起见
-        showToast('抽题失败');
-        return;
-      }
-      slotFinalTopic = final;
-
-      // 构造动画候选池
-      slotPool = pool;
-      slotLastText = final.text;  // 防止动画第一帧就和最终结果一样突兀
-      slotStepCount = 0;
-      slotLoop._last = 0;
-
-      // 重置双层
-      slotCurrentLayer = 'A';
-
-      // UI 进入 spinning 态
-      slotWrap.classList.add('spinning');
-      lockDrawButton();
-
-      // 预热音频
-      warmUpAudio();
-      const ctx = getAudioCtx();
-      if (ctx && ctx.state === 'suspended') {
-        try { ctx.resume(); } catch (_) {}
-      }
-
-      // 启动 rAF 主循环
-      slotRunning = true;
-      slotStartTime = performance.now();
-      slotRafId = requestAnimationFrame(slotLoop);
     }
 
     function selectFromLibrary(id) {
@@ -3049,16 +3236,22 @@
 
     /* ─── Topic CRUD ─── */
     function updateSelectionUI() {
-      const count = selectedIds.size;
-      btnDelSel.disabled = count === 0;
-      btnDelSel.textContent = count > 0 ? `删除选中 (${count})` : "删除选中";
-      if (btnMoveSel) {
-        btnMoveSel.disabled = count === 0;
-        btnMoveSel.textContent = count > 0 ? `移动到分组 (${count})` : "移动到分组";
-      }
-      const allIds = topics.map(function (t) { return t.id; });
-      selectAllEl.checked = allIds.length > 0 && count === allIds.length;
-      selectAllEl.indeterminate = count > 0 && count < allIds.length;
+      try {
+        const count = selectedIds.size;
+        if (btnDelSel) {
+          btnDelSel.disabled = count === 0;
+          btnDelSel.textContent = count > 0 ? `删除选中 (${count})` : "删除选中";
+        }
+        if (btnMoveSel) {
+          btnMoveSel.disabled = count === 0;
+          btnMoveSel.textContent = count > 0 ? `移动到分组 (${count})` : "移动到分组";
+        }
+        if (Array.isArray(topics) && selectAllEl) {
+          const allIds = topics.map(function (t) { return t && t.id; }).filter(Boolean);
+          selectAllEl.checked = allIds.length > 0 && count === allIds.length;
+          selectAllEl.indeterminate = count > 0 && count < allIds.length;
+        }
+      } catch (e) { try { console.error('[selection] updateSelectionUI:', e); } catch (_) {} }
     }
 
     function toggleSelect(id, checked) {
@@ -3242,30 +3435,30 @@
       check.type = "checkbox";
       check.className = "topic-check";
       check.checked = selectedIds.has(item.id);
-      check.addEventListener("change", () => toggleSelect(item.id, check.checked));
-      check.addEventListener("click", e => e.stopPropagation());
+      safeOn(check, "change", function () { toggleSelect(item.id, check.checked); });
+      safeOn(check, "click", function (e) { e.stopPropagation(); });
 
       if (editingId === item.id) {
         const inp = document.createElement("input");
         inp.className = "topic-edit-input";
         inp.dataset.editId = item.id;
         inp.value = item.text;
-        inp.addEventListener("click", e => e.stopPropagation());
-        inp.addEventListener("keydown", e => {
+        safeOn(inp, "click", function (e) { e.stopPropagation(); });
+        safeOn(inp, "keydown", function (e) {
           if (e.key === "Enter") saveEdit(item.id, inp.value);
           if (e.key === "Escape") cancelEdit();
         });
-        const bS = document.createElement("button"); bS.className = "btn-icon save"; bS.textContent = "✓"; bS.title = "保存"; bS.addEventListener("click", e => { e.stopPropagation(); saveEdit(item.id, inp.value); });
-        const bC = document.createElement("button"); bC.className = "btn-icon cancel"; bC.textContent = "✗"; bC.title = "取消"; bC.addEventListener("click", e => { e.stopPropagation(); cancelEdit(); });
+        const bS = document.createElement("button"); bS.className = "btn-icon save"; bS.textContent = "✓"; bS.title = "保存"; safeOn(bS, "click", function (e) { e.stopPropagation(); saveEdit(item.id, inp.value); });
+        const bC = document.createElement("button"); bC.className = "btn-icon cancel"; bC.textContent = "✗"; bC.title = "取消"; safeOn(bC, "click", function (e) { e.stopPropagation(); cancelEdit(); });
         row.append(check, inp, bS, bC);
       } else {
         const span = document.createElement("span");
         span.className = "topic-text";
         span.textContent = item.text;
         span.title = "点击设为当前挑战";
-        span.addEventListener("click", () => selectFromLibrary(item.id));
-        const bE = document.createElement("button"); bE.className = "btn-icon"; bE.textContent = "✎"; bE.title = "编辑"; bE.addEventListener("click", e => { e.stopPropagation(); startEdit(item.id); });
-        const bD = document.createElement("button"); bD.className = "btn-icon cancel"; bD.textContent = "×"; bD.title = "删除"; bD.addEventListener("click", e => { e.stopPropagation(); deleteTopics(new Set([item.id])); });
+        safeOn(span, "click", function () { selectFromLibrary(item.id); });
+        const bE = document.createElement("button"); bE.className = "btn-icon"; bE.textContent = "✎"; bE.title = "编辑"; safeOn(bE, "click", function (e) { e.stopPropagation(); startEdit(item.id); });
+        const bD = document.createElement("button"); bD.className = "btn-icon cancel"; bD.textContent = "×"; bD.title = "删除"; safeOn(bD, "click", function (e) { e.stopPropagation(); deleteTopics(new Set([item.id])); });
         row.append(check, span, bE, bD);
       }
       return row;
@@ -3278,44 +3471,51 @@
      * 3) 即使分组为空也保留该分组标题
      */
     function renderModalList() {
-      modalBody.innerHTML = '';
-      modalCount.textContent = `共 ${topics.length} 个挑战`;
+      try {
+        if (!modalBody) return;
+        modalBody.innerHTML = '';
+        if (modalCount) modalCount.textContent = `共 ${topics.length} 个挑战`;
 
-      // "未分组" 区
-      const ungrouped = topics.filter(function (t) { return t.groupId == null; });
-      modalBody.appendChild(buildGroupSection({
-        key: 'ungrouped',
-        title: '未分组',
-        cls: 'ungrouped',
-        section: { kind: 'ungrouped' },
-        items: ungrouped,
-        actions: []
-      }));
+        // "未分组" 区
+        const ungrouped = (topics || []).filter(function (t) { return t && t.groupId == null; });
+        const sec1 = buildGroupSection({
+          key: 'ungrouped',
+          title: '未分组',
+          cls: 'ungrouped',
+          section: { kind: 'ungrouped' },
+          items: ungrouped,
+          actions: []
+        });
+        if (sec1) modalBody.appendChild(sec1);
 
-      // 用户自定义分组
-      groups.forEach(function (g) {
-        const items = topics.filter(function (t) { return t.groupId === g.id; });
-        modalBody.appendChild(buildGroupSection({
-          key: 'group-' + g.id,
-          title: g.name,
-          cls: 'group',
-          dataId: g.id,
-          section: { kind: 'group', groupId: g.id },
-          items: items,
-          actions: [
-            { title: '重命名', text: '✎', cls: 'edit',  onClick: function () { openGroupRenameModal(g.id); } },
-            { title: '删除',   text: '×', cls: 'cancel', onClick: function () { confirmDeleteGroup(g.id); } }
-          ]
-        }));
-      });
+        // 用户自定义分组
+        (groups || []).forEach(function (g) {
+          const items = (topics || []).filter(function (t) { return t && t.groupId === g.id; });
+          const sec = buildGroupSection({
+            key: 'group-' + g.id,
+            title: g.name,
+            cls: 'group',
+            dataId: g.id,
+            section: { kind: 'group', groupId: g.id },
+            items: items,
+            actions: [
+              { title: '重命名', text: '✎', cls: 'edit',  onClick: function () { openGroupRenameModal(g.id); } },
+              { title: '删除',   text: '×', cls: 'cancel', onClick: function () { confirmDeleteGroup(g.id); } }
+            ]
+          });
+          if (sec) modalBody.appendChild(sec);
+        });
 
-      if (!topics.length) {
-        modalBody.innerHTML = '<p style="color:var(--text-tertiary);font-size:0.9rem;text-align:center;padding:24px 0">暂无挑战，请添加或上传</p>';
+        if (!topics.length) {
+          modalBody.innerHTML = '<p style="color:var(--text-tertiary);font-size:0.9rem;text-align:center;padding:24px 0">暂无挑战，请添加或上传</p>';
+        }
+
+        // 同步"新增话题"分组选择器 & "移动到分组"按钮
+        try { syncNewTopicGroupSelect(); } catch (e) { console.error('[modal] syncNewTopicGroupSelect:', e); }
+        try { updateSelectionUI(); } catch (e) { console.error('[modal] updateSelectionUI:', e); }
+      } catch (e) {
+        try { console.error('[modal] renderModalList:', e); } catch (_) {}
       }
-
-      // 同步"新增话题"分组选择器 & "移动到分组"按钮
-      syncNewTopicGroupSelect();
-      updateSelectionUI();
     }
 
     function buildGroupSection(opts) {
@@ -3348,7 +3548,7 @@
           b.title = a.title;
           b.addEventListener('click', function (e) {
             e.stopPropagation();
-            try { a.onClick(); } catch (err) { console.warn(err); }
+            try { a.onClick(); } catch (err) { try { console.warn(err); } catch (_) {} }
           });
           acts.appendChild(b);
         });
@@ -3423,50 +3623,72 @@
       showToast(`已删除分组"${g.name}"，${res.movedCount} 个挑战已转入未分组`);
     }
 
-    function openModal()  { editingId = null; renderModalList(); modal.classList.add("open"); }
-    function closeModal(){ modal.classList.remove("open"); editingId = null; }
+    function openModal()  {
+      try { editingId = null; renderModalList(); } catch (e) { console.error('[modal] open:', e); }
+      try { if (modal) modal.classList.add("open"); } catch (_) {}
+    }
+    function closeModal(){
+      try { if (modal) modal.classList.remove("open"); editingId = null; } catch (_) {}
+    }
 
-    /* ─── Init ─── */
-    // 1) 旧数据迁移（cat → groupId: null）
-    migrateOldTopics();
-    // 2) 加载课程库话题 + 分组
-    topics = loadTopics();
-    groups = loadGroups();
-    // 3) 兜底：确保每个话题都带 groupId 字段（防止老数据 / 第三方脏数据）
-    topics.forEach(function (t) {
-      if (!t || typeof t.text !== 'string') return;
-      if (!('groupId' in t)) t.groupId = null;
-    });
-    // 4) 加载抽题范围 + 折叠状态
-    trainingScope = loadTrainingScope();
-    groupCollapseMap = loadCollapseMap();
-    // 5) 兜底：scope 引用的分组不存在时回退到全部
-    validateScope();
-    // 6) 渲染顶部"抽题范围"显示
-    renderScopePill();
-    // 7) 计时器
-    const durSec = loadDuration();
-    // 用总秒数同步到 输入框：限制为非负，避免负值
-    const _dH = Math.floor(durSec / 3600);
-    const _dM = Math.floor((durSec % 3600) / 60);
-    const _dS = durSec % 60;
-    timeInputH.value = String(_dH).padStart(2, '0');
-    timeInputM.value = String(_dM).padStart(2, '0');
-    timeInputS.value = String(_dS).padStart(2, '0');
-    totalSeconds = durSec;
-    remaining = totalSeconds;
-    timerEl.textContent = formatTime(totalSeconds);
-    updateControls();
-    // 8) 初始化内嵌分类标签为隐藏
-    if (slotBadge) { slotBadge.textContent = ''; slotBadge.classList.remove('show'); }
-    // 8.5) 初始化训练次数（从 localStorage 读，跨日自动重置）
-    renderTrainCount(loadDailyCount(), false);
-    // 9) 时间快捷按钮
-    bindDurationPresets();
-    syncDurationPresets();
-    // 10) 同步 UI 状态机 + 分类标签
-    syncUiState();
-    renderSlotBadge();
+    /* ─── Init · 包在 try/catch 中，确保任意一步失败不阻塞后续 ─── */
+    function bootApp() {
+      try {
+        // 1) 旧数据迁移（cat → groupId: null）
+        try { migrateOldTopics(); } catch (e) { console.error('[boot] migrateOldTopics:', e); }
+        // 2) 加载课程库话题 + 分组
+        try { topics = loadTopics(); } catch (e) { console.error('[boot] loadTopics:', e); topics = []; }
+        try { groups = loadGroups(); } catch (e) { console.error('[boot] loadGroups:', e); groups = []; }
+        // 兜底：即使异常也要保证是数组
+        if (!Array.isArray(topics)) topics = [];
+        if (!Array.isArray(groups)) groups = [];
+        // 3) 兜底：确保每个话题都带 groupId 字段（防止老数据 / 第三方脏数据）
+        topics.forEach(function (t) {
+          if (!t || typeof t.text !== 'string') return;
+          if (!('groupId' in t)) t.groupId = null;
+        });
+        // 4) 加载抽题范围 + 折叠状态
+        try { trainingScope = loadTrainingScope(); } catch (e) { console.error('[boot] loadTrainingScope:', e); trainingScope = { type: 'all' }; }
+        try { groupCollapseMap = loadCollapseMap(); } catch (e) { console.error('[boot] loadCollapseMap:', e); groupCollapseMap = {}; }
+        // 5) 兜底：scope 引用的分组不存在时回退到全部
+        try { validateScope(); } catch (e) { console.error('[boot] validateScope:', e); }
+        // 6) 渲染顶部"抽题范围"显示
+        try { renderScopePill(); } catch (e) { console.error('[boot] renderScopePill:', e); }
+        // 7) 计时器
+        let durSec = 180;
+        try { durSec = loadDuration(); } catch (e) { console.error('[boot] loadDuration:', e); durSec = 180; }
+        if (!(durSec > 0)) durSec = 180;
+        const _dH = Math.floor(durSec / 3600);
+        const _dM = Math.floor((durSec % 3600) / 60);
+        const _dS = durSec % 60;
+        if (timeInputH) timeInputH.value = String(_dH).padStart(2, '0');
+        if (timeInputM) timeInputM.value = String(_dM).padStart(2, '0');
+        if (timeInputS) timeInputS.value = String(_dS).padStart(2, '0');
+        totalSeconds = durSec;
+        remaining = totalSeconds;
+        if (timerEl) timerEl.textContent = formatTime(totalSeconds);
+        try { updateControls(); } catch (e) { console.error('[boot] updateControls:', e); }
+        // 8) 初始化内嵌分类标签为隐藏
+        if (slotBadge) { slotBadge.textContent = ''; slotBadge.classList.remove('show'); }
+        // 8.5) 初始化训练次数（从 localStorage 读，跨日自动重置）
+        try { renderTrainCount(loadDailyCount(), false); } catch (e) { console.error('[boot] renderTrainCount:', e); }
+        // 9) 时间快捷按钮
+        try { bindDurationPresets(); } catch (e) { console.error('[boot] bindDurationPresets:', e); }
+        try { syncDurationPresets(); } catch (e) { console.error('[boot] syncDurationPresets:', e); }
+        // 10) 同步 UI 状态机 + 分类标签
+        try { syncUiState(); } catch (e) { console.error('[boot] syncUiState:', e); }
+        try { renderSlotBadge(); } catch (e) { console.error('[boot] renderSlotBadge:', e); }
+      } catch (err) {
+        console.error('[boot] fatal init error:', err);
+      }
+    }
+
+    // 等待 DOM 就绪再 boot
+    if (typeof window.__whenReady === 'function') {
+      window.__whenReady(bootApp);
+    } else {
+      try { bootApp(); } catch (_) {}
+    }
 
     /* 训练时长快捷按钮 + 自定义时分秒 */
     function getCurrentCustomSeconds() {
@@ -3482,26 +3704,32 @@
 
     /** 把当前选择的总秒数写入 LocalStorage，并刷新页面 timer */
     function applyDurationSeconds(sec) {
-      if (!(sec > 0)) sec = 1; // 防御
-      totalSeconds = sec;
-      saveDuration(sec);
-      if (timerState === 'idle' || timerState === 'done') {
-        remaining = totalSeconds;
-        timerEl.textContent = formatTime(totalSeconds);
-        progressEl.style.width = '0%';
-        progressEl.className = 'progress-fill';
-      }
+      try {
+        if (!(sec > 0)) sec = 1; // 防御
+        totalSeconds = sec;
+        try { saveDuration(sec); } catch (e) { console.error('[storage] save duration:', e); }
+        if (timerState === 'idle' || timerState === 'done') {
+          remaining = totalSeconds;
+          if (timerEl) timerEl.textContent = formatTime(totalSeconds);
+          if (progressEl) {
+            progressEl.style.width = '0%';
+            progressEl.className = 'progress-fill';
+          }
+        }
+      } catch (e) { try { console.error('[duration] applyDurationSeconds:', e); } catch (_) {} }
     }
 
     /** 把总秒数拆分并回填到三个输入框（不立即应用为选中时间） */
     function fillCustomInputsFromSeconds(sec) {
-      if (sec == null || isNaN(sec) || sec <= 0) sec = 300;
-      const H = Math.floor(sec / 3600);
-      const M = Math.floor((sec % 3600) / 60);
-      const S = sec % 60;
-      timeInputH.value = String(H).padStart(2, '0');
-      timeInputM.value = String(M).padStart(2, '0');
-      timeInputS.value = String(S).padStart(2, '0');
+      try {
+        if (sec == null || isNaN(sec) || sec <= 0) sec = 300;
+        const H = Math.floor(sec / 3600);
+        const M = Math.floor((sec % 3600) / 60);
+        const S = sec % 60;
+        if (timeInputH) timeInputH.value = String(H).padStart(2, '0');
+        if (timeInputM) timeInputM.value = String(M).padStart(2, '0');
+        if (timeInputS) timeInputS.value = String(S).padStart(2, '0');
+      } catch (e) { try { console.error('[duration] fillCustomInputsFromSeconds:', e); } catch (_) {} }
     }
 
     /** 限制输入为数字字符并自动加 0 前缀以保证两位 */
@@ -3528,9 +3756,10 @@
     }
 
     function bindDurationPresets() {
+      if (!durationPresets || typeof durationPresets.querySelectorAll !== 'function') return;
       const chips = durationPresets.querySelectorAll('.duration-chip');
       chips.forEach(function (chip) {
-        chip.addEventListener('click', function () {
+        safeOn(chip, 'click', function () {
           // 训练中禁止改时间
           if (timerState === 'running' || timerState === 'paused') {
             showToast('请暂停训练后修改时间');
@@ -3562,6 +3791,7 @@
     }
 
     function syncDurationPresets() {
+      if (!durationPresets || typeof durationPresets.querySelectorAll !== 'function') return;
       const chips = durationPresets.querySelectorAll('.duration-chip');
       let matched = false;
       chips.forEach(function (chip) {
@@ -3582,26 +3812,33 @@
 
     /* 输入体验：每输入都规范化 */
     [timeInputH, timeInputM, timeInputS].forEach(function (inp, idx) {
+      if (!inp) return;
       const max = inp === timeInputH ? 99 : 59;
-      inp.addEventListener('input', function () { clampTimeInput(inp, max, 2); setCustomError(''); });
-      inp.addEventListener('blur',  function () { clampTimeInput(inp, max, 2); });
-      inp.addEventListener('focus', function () {
+      safeOn(inp, 'input', function () { clampTimeInput(inp, max, 2); setCustomError(''); });
+      safeOn(inp, 'blur',  function () { clampTimeInput(inp, max, 2); });
+      safeOn(inp, 'focus', function () {
         // 输入框全部选中，方便覆盖输入
-        setTimeout(() => inp.select(), 0);
+        setTimeout(function () { try { inp.select(); } catch (_) {} }, 0);
       });
-      inp.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') { inp.blur(); btnConfirmTime.click(); }
+      safeOn(inp, 'keydown', function (e) {
+        if (e.key === 'Enter') { try { inp.blur(); } catch (_) {} if (btnConfirmTime) btnConfirmTime.click(); }
       });
     });
 
     /* 训练过程中锁定自定义面板的输入与确认按钮 */
     function syncCustomDurationLock() {
-      const locked = (timerState === 'running' || timerState === 'paused');
-      [timeInputH, timeInputM, timeInputS].forEach(i => { i.disabled = locked; });
-      btnConfirmTime.disabled = locked;
-      btnConfirmTime.classList.toggle('locked', locked);
-      // 快捷按钮也要禁用
-      durationPresets.querySelectorAll('.duration-chip').forEach(c => { c.disabled = locked; });
+      try {
+        const locked = (timerState === 'running' || timerState === 'paused');
+        [timeInputH, timeInputM, timeInputS].forEach(function (i) { if (i) i.disabled = locked; });
+        if (btnConfirmTime) {
+          btnConfirmTime.disabled = locked;
+          btnConfirmTime.classList.toggle('locked', locked);
+        }
+        // 快捷按钮也要禁用
+        if (durationPresets && typeof durationPresets.querySelectorAll === 'function') {
+          durationPresets.querySelectorAll('.duration-chip').forEach(function (c) { if (c) c.disabled = locked; });
+        }
+      } catch (e) { try { console.error('[controls] syncCustomDurationLock:', e); } catch (_) {} }
     }
 
     function setCustomError(msg) {
@@ -3610,7 +3847,7 @@
     }
 
     /* 确认时间按钮：把 HH/MM/SS 合成总秒数并应用 */
-    btnConfirmTime.addEventListener('click', function () {
+    safeOn(btnConfirmTime, 'click', function () {
       if (timerState === 'running' || timerState === 'paused') {
         showToast('请暂停训练后修改时间');
         return;
@@ -3650,22 +3887,26 @@
       });
     }
 
-    /* 空格触发抽题（输入框/textarea 内不响应） */
-    document.addEventListener("keydown", e => {
-      if (e.code !== "Space") return;
-      const ae = document.activeElement;
-      if (!ae) { /* noop */ }
-      else if (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.contentEditable === "true") return;
-      e.preventDefault();
-      // 触发轻微按下反馈（在热区上）
-      if (slotWrap) {
-        slotWrap.style.transform = "scale(0.992)";
-        setTimeout(() => { slotWrap.style.transform = ""; }, 110);
+    /* 空格触发抽题（输入框/textarea 内不响应）—— 整体 try/catch 包裹，确保键盘事件独立安全 */
+    document.addEventListener("keydown", function (e) {
+      try {
+        if (e.code !== "Space") return;
+        const ae = document.activeElement;
+        if (!ae) { /* noop */ }
+        else if (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.contentEditable === "true") return;
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        // 触发轻微按下反馈（在热区上）
+        if (slotWrap) {
+          slotWrap.style.transform = "scale(0.992)";
+          setTimeout(function () { slotWrap.style.transform = ""; }, 110);
+        }
+        if (typeof doSlotMachine === 'function') doSlotMachine();
+      } catch (err) {
+        try { console.error('[space-key] handler:', err); } catch (_) {}
       }
-      doSlotMachine();
     });
 
-    btnPlay.addEventListener("click", () => {
+    safeOn(btnPlay, "click", () => {
       if (timerState === "done") {
         // 再来一次：保留题目，仅重置时间
         resetTimer();
@@ -3690,24 +3931,24 @@
       startTimer();
     });
 
-    btnReset.addEventListener("click", () => {
+    safeOn(btnReset, "click", () => {
       if (timerState !== "idle" && timerState !== "done") resetTimer();
     });
 
-    selectAllEl.addEventListener("change", () => {
+    safeOn(selectAllEl, "change", () => {
       if (selectAllEl.checked) topics.forEach(t => selectedIds.add(t.id));
       else selectedIds.clear();
       renderModalList();
     });
 
-    btnDelSel.addEventListener("click", () => {
+    safeOn(btnDelSel, "click", () => {
       if (!selectedIds.size) return;
       if (!confirm(`确定删除选中的 ${selectedIds.size} 个挑战吗？`)) return;
       deleteTopics(new Set(selectedIds));
       selectedIds.clear();
     });
 
-    btnAddTopic.addEventListener("click", () => {
+    safeOn(btnAddTopic, "click", () => {
       const gid = newTopicGroup && newTopicGroup.style.display !== 'none' ? newTopicGroup.value : null;
       if (!addTopic(newTopicIn.value, gid)) { showToast("请输入挑战内容"); return; }
       saveTopics();
@@ -3716,14 +3957,14 @@
       showToast("挑战已添加");
     });
 
-    newTopicIn.addEventListener("keydown", e => { if (e.key === "Enter") btnAddTopic.click(); });
-    fileUpload.addEventListener("change", e => { const f = e.target.files[0]; if (f) handleFileUpload(f); });
-    btnLibrary.addEventListener("click", () => { closeScopeMenu(); openModal(); });
-    modalClose.addEventListener("click", closeModal);
-    modal.addEventListener("click", e => { if (e.target === modal) closeModal(); });
+    safeOn(newTopicIn, "keydown", e => { if (e.key === "Enter") btnAddTopic && btnAddTopic.click(); });
+    safeOn(fileUpload, "change", e => { const f = e.target.files[0]; if (f) handleFileUpload(f); });
+    safeOn(btnLibrary, "click", () => { closeScopeMenu(); openModal(); });
+    safeOn(modalClose, "click", closeModal);
+    safeOn(modal, "click", e => { if (e.target === modal) closeModal(); });
 
     /* 抽题范围选择器交互 */
-    scopePill.addEventListener('click', function (e) {
+    safeOn(scopePill, 'click', function (e) {
       e.stopPropagation();
       toggleScopeMenu();
     });
@@ -3735,71 +3976,79 @@
       closeScopeMenu();
     });
     // 滚动 / resize 时也收起
-    window.addEventListener('resize', closeScopeMenu);
-    window.addEventListener('scroll', closeScopeMenu, true);
-    scopeMenu.addEventListener('click', function (e) { e.stopPropagation(); });
+    safeOn(window, 'resize', closeScopeMenu);
+    safeOn(window, 'scroll', closeScopeMenu, true);
+    safeOn(scopeMenu, 'click', function (e) { e.stopPropagation(); });
     document.addEventListener("keydown", e => { if (e.key === "Escape") {
       // 关闭最上层的弹窗
-      if (moveGroupModal.classList.contains('open')) closeMoveGroupModal();
-      else if (uploadGroupModal.classList.contains('open')) closeUploadGroupModal();
-      else if (groupModal.classList.contains('open')) closeGroupModal();
+      if (moveGroupModal && moveGroupModal.classList.contains('open')) closeMoveGroupModal();
+      else if (uploadGroupModal && uploadGroupModal.classList.contains('open')) closeUploadGroupModal();
+      else if (groupModal && groupModal.classList.contains('open')) closeGroupModal();
       else closeModal();
     } });
 
     /* ─── Group modal · 新建 / 重命名 ─── */
     function openGroupCreateModal() {
-      groupModalMode = 'create';
-      groupModalTargetId = null;
-      groupModalTitle.textContent = '新建分组';
-      groupModalConfirm.textContent = '创建';
-      groupNameInput.value = '';
-      groupModal.classList.add('open');
-      setTimeout(function () { groupNameInput.focus(); }, 50);
+      try {
+        groupModalMode = 'create';
+        groupModalTargetId = null;
+        if (groupModalTitle) groupModalTitle.textContent = '新建分组';
+        if (groupModalConfirm) groupModalConfirm.textContent = '创建';
+        if (groupNameInput) groupNameInput.value = '';
+        if (groupModal) groupModal.classList.add('open');
+        setTimeout(function () { try { if (groupNameInput) groupNameInput.focus(); } catch (_) {} }, 50);
+      } catch (e) { try { console.error('[group] openCreate:', e); } catch (_) {} }
     }
 
     function openGroupRenameModal(id) {
-      const g = groups.find(function (x) { return x.id === id; });
-      if (!g) return;
-      groupModalMode = 'rename';
-      groupModalTargetId = id;
-      groupModalTitle.textContent = '重命名分组';
-      groupModalConfirm.textContent = '保存';
-      groupNameInput.value = g.name;
-      groupModal.classList.add('open');
-      setTimeout(function () { groupNameInput.focus(); groupNameInput.select(); }, 50);
+      try {
+        const g = groups.find(function (x) { return x.id === id; });
+        if (!g) return;
+        groupModalMode = 'rename';
+        groupModalTargetId = id;
+        if (groupModalTitle) groupModalTitle.textContent = '重命名分组';
+        if (groupModalConfirm) groupModalConfirm.textContent = '保存';
+        if (groupNameInput) groupNameInput.value = g.name;
+        if (groupModal) groupModal.classList.add('open');
+        setTimeout(function () { try { if (groupNameInput) { groupNameInput.focus(); groupNameInput.select(); } } catch (_) {} }, 50);
+      } catch (e) { try { console.error('[group] openRename:', e); } catch (_) {} }
     }
 
     function closeGroupModal() {
-      groupModal.classList.remove('open');
-      groupNameInput.value = '';
-      groupModalTargetId = null;
+      try {
+        if (groupModal) groupModal.classList.remove('open');
+        if (groupNameInput) groupNameInput.value = '';
+        groupModalTargetId = null;
+      } catch (_) {}
     }
 
     function submitGroupModal() {
-      const name = groupNameInput.value;
-      if (groupModalMode === 'create') {
-        const res = createGroup(name);
-        if (!res.ok) { showToast(res.msg || '创建失败'); return; }
-        closeGroupModal();
-        renderModalList();
-        renderScopePill();
-        showToast(`已创建分组"${res.group.name}"`);
-      } else {
-        const res = renameGroup(groupModalTargetId, name);
-        if (!res.ok) { showToast(res.msg || '重命名失败'); return; }
-        closeGroupModal();
-        renderModalList();
-        renderScopePill();
-        showToast('分组已重命名');
-      }
+      try {
+        const name = groupNameInput ? groupNameInput.value : '';
+        if (groupModalMode === 'create') {
+          const res = createGroup(name);
+          if (!res.ok) { showToast(res.msg || '创建失败'); return; }
+          closeGroupModal();
+          try { renderModalList(); } catch (_) {}
+          try { renderScopePill(); } catch (_) {}
+          showToast(`已创建分组"${res.group.name}"`);
+        } else {
+          const res = renameGroup(groupModalTargetId, name);
+          if (!res.ok) { showToast(res.msg || '重命名失败'); return; }
+          closeGroupModal();
+          try { renderModalList(); } catch (_) {}
+          try { renderScopePill(); } catch (_) {}
+          showToast('分组已重命名');
+        }
+      } catch (e) { try { console.error('[group] submit:', e); } catch (_) {} }
     }
 
-    btnNewGroup.addEventListener('click', openGroupCreateModal);
-    groupModalClose.addEventListener('click', closeGroupModal);
-    groupModalCancel.addEventListener('click', closeGroupModal);
-    groupModalConfirm.addEventListener('click', submitGroupModal);
-    groupModal.addEventListener('click', function (e) { if (e.target === groupModal) closeGroupModal(); });
-    groupNameInput.addEventListener('keydown', function (e) {
+    safeOn(btnNewGroup, 'click', openGroupCreateModal);
+    safeOn(groupModalClose, 'click', closeGroupModal);
+    safeOn(groupModalCancel, 'click', closeGroupModal);
+    safeOn(groupModalConfirm, 'click', submitGroupModal);
+    safeOn(groupModal, 'click', function (e) { if (e.target === groupModal) closeGroupModal(); });
+    safeOn(groupNameInput, 'keydown', function (e) {
       if (e.key === 'Enter') submitGroupModal();
       if (e.key === 'Escape') closeGroupModal();
     });
@@ -3807,6 +4056,7 @@
     /* ─── Upload group modal · 上传前选择分组 ─── */
     function openUploadGroupModal() {
       // 填充选项：未分组 + 所有分组
+      if (!uploadGroupSelect || !uploadGroupModal) return;
       uploadGroupSelect.innerHTML = '';
       const o0 = document.createElement('option');
       o0.value = ''; o0.textContent = '未分组';
@@ -3821,30 +4071,31 @@
     }
 
     function closeUploadGroupModal() {
-      uploadGroupModal.classList.remove('open');
+      if (uploadGroupModal) uploadGroupModal.classList.remove('open');
       pendingUploadItems = null;
       pendingUploadExt = null;
     }
 
     function confirmUploadGroup() {
       if (!pendingUploadItems) { closeUploadGroupModal(); return; }
-      const gid = uploadGroupSelect.value || null;
+      const gid = (uploadGroupSelect && uploadGroupSelect.value) || null;
       const added = commitImportedTopics(pendingUploadItems, gid);
       closeUploadGroupModal();
       if (added > 0) { renderModalList(); showToast(`成功导入 ${added} 个挑战`); }
       else showToast('没有可导入的挑战（重复或为空）');
     }
 
-    uploadGroupModalClose.addEventListener('click', closeUploadGroupModal);
-    uploadGroupCancel.addEventListener('click', closeUploadGroupModal);
-    uploadGroupConfirm.addEventListener('click', confirmUploadGroup);
-    uploadGroupModal.addEventListener('click', function (e) { if (e.target === uploadGroupModal) closeUploadGroupModal(); });
+    safeOn(uploadGroupModalClose, 'click', closeUploadGroupModal);
+    safeOn(uploadGroupCancel, 'click', closeUploadGroupModal);
+    safeOn(uploadGroupConfirm, 'click', confirmUploadGroup);
+    safeOn(uploadGroupModal, 'click', function (e) { if (e.target === uploadGroupModal) closeUploadGroupModal(); });
 
     /* ─── Move topics modal · 批量移动 ─── */
     function openMoveGroupModal() {
       if (!selectedIds.size) { showToast('请先选择挑战'); return; }
       if (!groups.length) { showToast('当前没有可用的分组，请先创建一个分组'); return; }
       pendingMoveIds = new Set(selectedIds);
+      if (!moveGroupSelect || !moveGroupModal) return;
       moveGroupSelect.innerHTML = '';
       const o0 = document.createElement('option');
       o0.value = ''; o0.textContent = '未分组';
@@ -3859,13 +4110,13 @@
     }
 
     function closeMoveGroupModal() {
-      moveGroupModal.classList.remove('open');
+      if (moveGroupModal) moveGroupModal.classList.remove('open');
       pendingMoveIds = null;
     }
 
     function confirmMoveGroup() {
       if (!pendingMoveIds || !pendingMoveIds.size) { closeMoveGroupModal(); return; }
-      const gid = moveGroupSelect.value || null;
+      const gid = (moveGroupSelect && moveGroupSelect.value) || null;
       const res = moveTopicsToGroup(pendingMoveIds, gid);
       closeMoveGroupModal();
       selectedIds.clear();
@@ -3873,11 +4124,19 @@
       if (res.ok) showToast(`已移动 ${res.count} 个挑战`);
     }
 
-    btnMoveSel.addEventListener('click', openMoveGroupModal);
-    moveGroupModalClose.addEventListener('click', closeMoveGroupModal);
-    moveGroupCancel.addEventListener('click', closeMoveGroupModal);
-    moveGroupConfirm.addEventListener('click', confirmMoveGroup);
-    moveGroupModal.addEventListener('click', function (e) { if (e.target === moveGroupModal) closeMoveGroupModal(); });
+    safeOn(btnMoveSel, 'click', openMoveGroupModal);
+    safeOn(moveGroupModalClose, 'click', closeMoveGroupModal);
+    safeOn(moveGroupCancel, 'click', closeMoveGroupModal);
+    safeOn(moveGroupConfirm, 'click', confirmMoveGroup);
+    safeOn(moveGroupModal, 'click', function (e) { if (e.target === moveGroupModal) closeMoveGroupModal(); });
+
+    /* ─── Mobile-safety boot trace ───
+       调试用：仅 console，不向 UI 显示任何错误信息
+    */
+    try { console.log('[boot] App initialized'); } catch (_) {}
+    try { console.log('[boot] Topics loaded:', Array.isArray(topics) ? topics.length : 0); } catch (_) {}
+    try { console.log('[boot] Groups loaded:', Array.isArray(groups) ? groups.length : 0); } catch (_) {}
+    try { console.log('[boot] Audio:', !!(window.__appCaps && window.__appCaps.audio), 'Storage:', !!(window.__appCaps && window.__appCaps.storage)); } catch (_) {}
   </script>
 </body>
 </html>
