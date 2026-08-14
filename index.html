@@ -16,10 +16,13 @@
       --text-primary: #1d1d1f;
       --text-secondary: #6e6e73;
       --text-tertiary: #a1a1a6;
-      --accent: #0071e3;
-      --accent-hover: #0077ed;
-      --accent-soft: rgba(0,113,227,0.06);
-      --accent-softer: rgba(0,113,227,0.04);
+      --accent: #3a6df0;
+      --accent-hover: #2e5fde;
+      --accent-soft: rgba(58, 109, 240, 0.07);
+      --accent-softer: rgba(58, 109, 240, 0.04);
+      --accent-2: #7a5cff;            /* 蓝紫渐变 紫色端 */
+      --gradient-brand: linear-gradient(135deg, #3a6df0 0%, #7a5cff 100%);
+      --gradient-brand-soft: linear-gradient(135deg, rgba(58, 109, 240, 0.92) 0%, rgba(122, 92, 255, 0.92) 100%);
       --border: rgba(0, 0, 0, 0.06);
       --border-soft: rgba(0,0,0,0.045);
       --shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
@@ -73,7 +76,7 @@
       font-size: 1.35rem;
       font-weight: 800;
       letter-spacing: -0.03em;
-      background: linear-gradient(135deg, var(--accent) 0%, #5856d6 100%);
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -99,7 +102,7 @@
 
     .brand-title em {
       font-style: normal;
-      background: linear-gradient(135deg, var(--accent), #5856d6);
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -133,6 +136,42 @@
     }
 
     .btn-library:active { transform: translateY(0) scale(0.98); }
+
+    /* ─── Train Counter（今日训练次数 · 顶部副指标） ─── */
+    .train-counter {
+      width: 100%;
+      max-width: 680px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 2px 4px 14px;
+      color: var(--text-tertiary);
+      font-size: 0.82rem;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      -webkit-font-smoothing: antialiased;
+      transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .train-counter.bump { transform: translateY(-1px); }
+    .train-counter-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 0 3px rgba(58, 109, 240, 0.10);
+      animation: dotPulse 2.6s ease-in-out infinite;
+    }
+    .train-counter-text strong {
+      color: var(--text-primary);
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      padding: 0 2px;
+    }
+    @keyframes dotPulse {
+      0%, 100% { box-shadow: 0 0 0 3px rgba(58, 109, 240, 0.10); }
+      50%      { box-shadow: 0 0 0 6px rgba(58, 109, 240, 0.04); }
+    }
 
     /* ─── Main Card ─── */
     .card {
@@ -390,14 +429,15 @@
       line-height: 1.7;
     }
 
-    /* 抽中揭晓动画：克制、轻量、ease-out */
+    /* 揭晓瞬间的入场：scale 0.9 → 1.05 → 1，opacity 0 → 1，使用 cubic-bezier(0.22, 1, 0.36, 1) */
     .topic.land {
-      animation: topicLand 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      animation: topicLand 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
 
     @keyframes topicLand {
-      0%   { transform: scale(0.96) translateZ(0); opacity: 0; }
-      100% { transform: scale(1)    translateZ(0); opacity: 1; }
+      0%   { transform: scale(0.9)  translateZ(0); opacity: 0;   }
+      60%  { transform: scale(1.05) translateZ(0); opacity: 1;   }
+      100% { transform: scale(1)    translateZ(0); opacity: 1;   }
     }
 
     /* 揭晓瞬间给题目区域一个非常短暂的高光边框（400ms 后自动消失） */
@@ -435,12 +475,33 @@
       opacity: 0.85;
     }
 
-    .topic-tag.show { display: inline-block; }
-    .topic-tag.ungrouped,
-    .topic-tag.group {
+    /* 分类标签：位于白框（slot-wrap）正上方居中，与下方题目保持呼吸感 */
+    .slot-badge {
+      display: none;             /* 默认隐藏：scope = 'all' 时不显示 */
+      align-self: center;        /* 在 flex 列里水平居中（card-section 是 flex） */
+      font-size: 0.72rem;        /* 略放大一点点，精致而不抢戏 */
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: rgba(0,113,227,0.08);
       color: var(--accent);
-      background: var(--accent-soft);
+      margin-top: 14px;          /* 与 section-label 拉开 */
+      margin-bottom: 16px;       /* 与下方白框（slot-wrap）保证足够呼吸感 */
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 280ms ease;
+      white-space: nowrap;
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
+    .slot-badge.show {
+      display: inline-block;
+      opacity: 1;
+    }
+    .slot-badge:hover { opacity: 1; }
 
     /* ─── Status Strip（动态状态提示） ─── */
     .status-strip {
@@ -542,7 +603,7 @@
     }
 
     .duration-chip.active {
-      background: linear-gradient(135deg, var(--accent) 0%, #5856d6 100%);
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
       color: #fff;
       border-color: transparent;
       box-shadow: 0 2px 8px rgba(0, 113, 227, 0.28);
@@ -644,7 +705,7 @@
     .time-input:disabled { opacity: 0.4; cursor: not-allowed; }
 
     .btn-confirm-time {
-      background: linear-gradient(135deg, var(--accent) 0%, #5856d6 100%);
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
       color: #fff;
       border: none;
       border-radius: var(--radius-pill);
@@ -717,7 +778,7 @@
 
     .progress-fill {
       height: 100%;
-      background: linear-gradient(90deg, var(--accent), #5856d6);
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
       border-radius: var(--radius-pill);
       width: 0%;
       transition: width 0.6s linear, background 0.5s ease;
@@ -744,24 +805,41 @@
       font-weight: 700;
       letter-spacing: -0.005em;
       color: #fff;
-      background: linear-gradient(135deg, var(--accent) 0%, #5856d6 100%);
+      background: var(--gradient-brand);
       cursor: pointer;
-      box-shadow: 0 4px 14px rgba(67, 97, 238, 0.25);
-      transition: transform 200ms ease, box-shadow 200ms ease, filter 200ms ease;
+      box-shadow: 0 4px 14px rgba(58, 109, 240, 0.28), 0 1px 2px rgba(122, 92, 255, 0.12);
+      transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+                  box-shadow 200ms cubic-bezier(0.22, 1, 0.36, 1),
+                  filter 200ms ease;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
+      position: relative;
+      isolation: isolate;
+      will-change: transform;
+    }
+
+    .btn-primary::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0));
+      opacity: 0.65;
+      pointer-events: none;
+      z-index: -1;
     }
 
     .btn-primary:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 22px rgba(67, 97, 238, 0.32);
+      transform: translateY(-2px) scale(1.005);
+      box-shadow: 0 10px 26px rgba(58, 109, 240, 0.32), 0 2px 6px rgba(122, 92, 255, 0.16);
       filter: brightness(1.04);
     }
 
     .btn-primary:active:not(:disabled) {
-      transform: translateY(0) scale(0.98);
+      transform: translateY(0) scale(0.985);
+      box-shadow: 0 4px 12px rgba(58, 109, 240, 0.28);
     }
 
     .btn-primary:disabled {
@@ -1358,11 +1436,17 @@
 
       .timer { font-size: 3rem; }
 
+      /* 窄屏：分类标签适当缩小间距，但仍保持居中 */
+      .slot-badge { margin-top: 10px; margin-bottom: 12px; font-size: 0.66rem; padding: 3px 10px; }
+
       /* 超窄屏：时长胶囊一行 2 个 */
       .duration-presets { gap: 6px; }
       .duration-chip { flex: 1 1 calc(50% - 6px); }
 
       .btn-primary { font-size: 0.98rem; min-height: 50px; }
+
+      /* 窄屏：训练次数指示器居中 */
+      .train-counter { justify-content: center; padding-bottom: 10px; font-size: 0.78rem; }
     }
   </style>
 </head>
@@ -1370,13 +1454,19 @@
   <div class="header">
     <div class="header-brand">
       <span class="brand-mark">B.</span>
-      <div class="brand-wordmark">
-        <div class="brand-title">表达力<em>训练</em></div>
-        <p class="brand-tagline">今天，试着把一个问题讲清楚。</p>
-      </div>
+<div class="brand-wordmark">
+      <div class="brand-title">表达力<em>训练</em></div>
+      <p class="brand-tagline" id="brandTagline">今天，试着把一个问题讲清楚。</p>
     </div>
-    <button class="btn-library" id="btnLibrary">话题库</button>
   </div>
+  <button class="btn-library" id="btnLibrary">话题库</button>
+</div>
+
+<!-- 今日训练次数 · 放在 header 下方，作为右侧副指标（轻量指示器，不抢视觉重心） -->
+<div class="train-counter">
+  <span class="train-counter-dot"></span>
+  <span class="train-counter-text">今日已训练 <strong id="trainCount">0</strong> 次</span>
+</div>
 
   <div class="card" id="trainCard">
     <!-- 区 1：当前训练范围 -->
@@ -1398,12 +1488,15 @@
     <!-- 区 2：当前挑战（核心交互热区） -->
     <section class="card-section challenge-section">
       <span class="section-label">当前挑战</span>
-      <span class="topic-tag" id="tag"></span>
+      <!-- 分类标签：居中放在白框正上方，与下方题目保持舒适间距 -->
+      <span class="slot-badge" id="slotBadge"></span>
 
       <button class="slot-wrap slot-hotzone" id="slotWrap" type="button" aria-label="点击或按空格抽取今日挑战">
+        <!-- 抽取 CTA 角标 -->
+        <span class="slot-cta" id="slotCta">点击抽取</span>
+        <!-- 双层滚动槽 -->
         <div class="slot-layer visible" id="slotA"><div class="topic empty">点击此处或按下键盘 <kbd>Space</kbd> 抽取今日题目</div></div>
         <div class="slot-layer" id="slotB"><div class="topic empty"></div></div>
-        <span class="slot-cta" id="slotCta">点击抽取</span>
       </button>
 
       <!-- 状态提示条 -->
@@ -1582,6 +1675,8 @@
     const MIGRATION_FLAG   = "talk-tool-migrated-v2";
     const SCOPE_KEY        = "talk-tool-training-scope";      // 抽题范围
     const COLLAPSE_KEY     = "talk-tool-group-collapse";      // 分组折叠状态
+    const COUNT_KEY        = "talk-tool-daily-count";         // 今日训练次数
+    const COUNT_DATE_KEY   = "talk-tool-daily-count-date";    // 绑定的日期 YYYY-MM-DD
 
     /* 注：旧版本使用 cat: "social"/"couple"/"speech"。
        新版本全部归入 groupId: null（未分组），由 migrateOldTopics() 兜底迁移 */
@@ -1669,8 +1764,9 @@
     ];
 
     /* ─── DOM refs ─── */
+    const trainCountEl     = document.getElementById("trainCount");
     const trainCard        = document.getElementById("trainCard");
-    const tagEl            = document.getElementById("tag");
+    const slotBadge         = document.getElementById("slotBadge");
     const timerEl          = document.getElementById("timer");
     const timerSub         = document.getElementById("timerSub");
     const progressEl       = document.getElementById("progress");
@@ -2160,10 +2256,28 @@
       saveTrainingScope();
       renderScopePill();
       renderScopeMenu();
+      renderSlotBadge();
     }
 
     function renderScopePill() {
       scopePillText.textContent = getScopeLabel();
+    }
+
+    /**
+     * 渲染热区左上角的内嵌分类标签。
+     * · 只修改 slotBadge.textContent（永不创建新元素，不会叠加）
+     * · scope = 'all' 时隐藏；其他情况显示当前 scope 名称
+     * · 已抽取题目后，题目固定在 currentTopicId，但标签跟随 scope 切换实时更新
+     */
+    function renderSlotBadge() {
+      if (!slotBadge) return;
+      const label = getScopeLabel();
+      if (label === '全部挑战') {
+        slotBadge.classList.remove('show');
+      } else {
+        slotBadge.textContent = label;
+        slotBadge.classList.add('show');
+      }
     }
 
     function buildScopeMenuItems() {
@@ -2350,16 +2464,6 @@
         topicA.classList.remove("empty", "blur", "ghost");
       }
 
-      // 标签：仅在已选定分组时显示
-      const showTag = trainingScope.type !== 'all';
-      if (showTag) {
-        const label = getTopicGroupLabel(item);
-        tagEl.textContent = label;
-        tagEl.className = "topic-tag show " + (item.groupId == null ? "ungrouped" : "group");
-      } else {
-        tagEl.classList.remove('show');
-      }
-
       // 同步 slot 双层结构，复位到 A 层
       try {
         const slotA = document.getElementById('slotA');
@@ -2377,6 +2481,67 @@
       syncUiState();
     }
 
+    /* ─── Daily Train Count · 今日训练次数 ───
+       规则：
+       · 完成一次训练（计时归零）才算一次；抽题不算
+       · 计数按本地自然日（YYYY-MM-DD）切换，跨日自动重置
+       · localStorage 持久化，刷新或重启不丢
+    */
+    function _todayKey() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    function loadDailyCount() {
+      try {
+        const savedDate = localStorage.getItem(COUNT_DATE_KEY);
+        const today = _todayKey();
+        if (savedDate !== today) {
+          // 跨日或首次访问：归零
+          localStorage.setItem(COUNT_DATE_KEY, today);
+          localStorage.setItem(COUNT_KEY, "0");
+          return 0;
+        }
+        const raw = localStorage.getItem(COUNT_KEY);
+        const n = parseInt(raw || "0", 10);
+        return Number.isFinite(n) && n >= 0 ? n : 0;
+      } catch (_) {
+        return 0;
+      }
+    }
+
+    function saveDailyCount(n) {
+      try {
+        localStorage.setItem(COUNT_KEY, String(n));
+        localStorage.setItem(COUNT_DATE_KEY, _todayKey());
+      } catch (_) {}
+    }
+
+    function incrementDailyCount() {
+      const n = loadDailyCount() + 1;
+      saveDailyCount(n);
+      renderTrainCount(n, true);
+      return n;
+    }
+
+    function renderTrainCount(n, animate) {
+      if (!trainCountEl) return;
+      trainCountEl.textContent = String(n);
+      if (animate) {
+        const wrap = trainCountEl.closest(".train-counter");
+        if (wrap) {
+          wrap.classList.remove("bump");
+          // eslint-disable-next-line no-unused-expressions
+          wrap.offsetWidth;
+          wrap.classList.add("bump");
+          setTimeout(() => wrap.classList.remove("bump"), 360);
+        }
+      }
+    }
+
     /* ─── Timer ─── */
     function onTimerDone() {
       timerState = "done";
@@ -2384,11 +2549,34 @@
       timerEl.classList.remove("inactive", "running");
       progressEl.classList.add("done");
       playBeep();
+
+      // 训练完成 → 计数 +1
+      const newCount = incrementDailyCount();
+
+      // 请求浏览器通知（首次会弹权限；显式调用以保证权限流程明确）
+      tryRequestNotificationPermission();
+
+      // 浏览器通知
       if ("Notification" in window && Notification.permission === "granted") {
-        new Notification("B. Challenge", { body: "时间到！完成了一次挑战" });
+        try {
+          new Notification("B. Challenge", { body: `完成了一次挑战 · 今日已训练 ${newCount} 次` });
+        } catch (_) {}
       }
+
       updateControls();
       syncUiState();
+    }
+
+    /**
+     * 主动请求通知权限（非 granted / 非 denied 时调用）。
+     * 满足现代浏览器的"用户手势期间调用"要求 —— 由调用栈确保（onTimerDone 仅在用户点击开始后才会触发）。
+     */
+    function tryRequestNotificationPermission() {
+      if (!("Notification" in window)) return;
+      if (Notification.permission !== "default") return;
+      try {
+        Notification.requestPermission().then(function () {}).catch(function () {});
+      } catch (_) {}
     }
 
     function stopTimer() {
@@ -2514,20 +2702,20 @@
       // 热区标记：是否已抽到题（控制 CTA 角标显隐）
       if (slotWrap) slotWrap.dataset.hasTopic = (s === 'idle') ? '0' : '1';
 
-      // idle 状态没有 currentTopicId，tag 也不显示
+      // idle 状态：隐藏内嵌分类标签；非 idle：实时显示当前 scope
       if (s === 'idle') {
-        tagEl.classList.remove('show');
+        if (slotBadge) slotBadge.classList.remove('show');
+      } else {
+        renderSlotBadge();
       }
     }
 
     /* ─── Slot Machine · rAF 多阶段减速动画 ───
-       设计目标：4.5 ~ 5.5 秒抽题过程，营造仪式感、期待感、最终揭晓感。
-       阶段：
-         · Phase 1 高速 (0  ~ 1500ms)：70 ~ 100ms 跳字
-         · Phase 2 减速 (1500 ~ 3500ms)：100 → 300ms 平滑过渡
-         · Phase 3 慢速 (3500 ~ 4800ms)：350 → 750ms 平滑过渡
-         · Phase 4 假停顿 (4800 ~ 5400ms)：插入 1~2 次 ~500~800ms 停顿
-         · Phase 5 揭晓 (剩余)：最终题目写入选中层 + 轻微 scale/opacity 入场
+       设计目标：根据产品需求，总时长约 0.9s（紧凑、仪式感合适）。
+         · Phase 1 快速滚动 (0 ~ 300ms)：60~80ms 跳字
+         · Phase 2 减速     (300 ~ 700ms)：从 80 平滑到 200ms
+         · Phase 3 停顿     (700 ~ 900ms)：单次 200ms 停顿
+         · Phase 4 揭晓     (剩余 ~450ms)：最终题目写入 + scale 0.9→1.05→1 入场
        关键原则：
          · 单次抽题的最终结果在动画开始前用 pickTopic() 提前锁定为 finalTopic
          · 动画过程中显示的所有"候选话题"只是路过，与 finalTopic 无关
@@ -2546,18 +2734,16 @@
     let slotFinalTopic = null;    // 本次抽题开始前已锁定的最终结果
 
     // ─── 总时长配置（毫秒）───
-    const SLOT_PHASE1_END   = 1500;  // 高速阶段结束
-    const SLOT_PHASE2_END   = 3500;  // 减速阶段结束
-    const SLOT_PHASE3_END   = 4800;  // 慢速阶段结束
-    const SLOT_PAUSE_END    = 5400;  // 假停顿阶段结束
-    const SLOT_TOTAL_TIME   = 5500;  // 总时长（不含揭晓动画）
+    // 快速滚动 0.3s + 减速 0.4s + 停顿 0.2s ≈ 0.9s（不含 0.45s 揭晓入场）
+    const SLOT_PHASE1_END   = 300;   // 高速阶段结束（快速滚动 0.3s）
+    const SLOT_PHASE2_END   = 700;   // 减速阶段结束（减速 0.4s）
+    const SLOT_PAUSE_END    = 900;   // 停顿阶段结束（停顿 0.2s）
+    const SLOT_TOTAL_TIME   = 900;   // 总时长（不含揭晓动画）
 
     // 各阶段目标间隔
-    const SLOT_P1_INTERVAL  = 80;    // 高速阶段 70~100ms
-    const SLOT_P2_END       = 300;   // 减速结束时的间隔
-    const SLOT_P3_END       = 750;   // 慢速结束时的间隔
-    const SLOT_PAUSE_1      = 500;   // 假停顿 1
-    const SLOT_PAUSE_2      = 800;   // 假停顿 2
+    const SLOT_P1_INTERVAL  = 60;    // 高速阶段 ~60ms 跳字
+    const SLOT_P2_END       = 200;   // 减速结束时的间隔
+    const SLOT_PAUSE_INTERVAL = 200; // 停顿阶段的间隔
 
     /** ease-out cubic：前期快、后期慢（用于 progress 0→1 的非线性映射） */
     function easeOutCubic(t) {
@@ -2573,42 +2759,31 @@
 
     /**
      * 根据已用时间计算下一次跳字间隔（毫秒）
-     *   Phase 1 [0,1500]：恒定高速 80ms 左右（轻微抖动 70~95ms）
-     *   Phase 2 [1500,3500]：从 80 缓动到 300ms
-     *   Phase 3 [3500,4800]：从 300 缓动到 750ms
-     *   Phase 4 [4800,5400]：假停顿，间隔 500~800ms
-     *   Phase 5 [5400,+]  ：已被 finishSlot 接管
+     *   Phase 1 [0,300)：高速 ~60ms 跳字
+     *   Phase 2 [300,700)：60 → 200ms 平滑过渡
+     *   Phase 3 [700,900)：停顿 ~200ms（只跳 1 次）
      */
     function computeNextInterval(elapsed) {
       if (elapsed < SLOT_PHASE1_END) {
-        // 高速：基线 80ms，±15ms 抖动模拟"随机感"
-        return SLOT_P1_INTERVAL + (Math.random() * 30 - 15);
+        // 高速：基线 60ms，±10ms 抖动模拟"随机感"
+        return SLOT_P1_INTERVAL + (Math.random() * 20 - 10);
       }
       if (elapsed < SLOT_PHASE2_END) {
-        // 减速：80 → 300ms，ease-in-out 让两端平
+        // 减速：60 → 200ms，ease-in-out 让两端平
         const t = (elapsed - SLOT_PHASE1_END) / (SLOT_PHASE2_END - SLOT_PHASE1_END);
         const eased = easeInOutCubic(t);
         return SLOT_P1_INTERVAL + (SLOT_P2_END - SLOT_P1_INTERVAL) * eased;
       }
-      if (elapsed < SLOT_PHASE3_END) {
-        // 慢速：300 → 750ms
-        const t = (elapsed - SLOT_PHASE2_END) / (SLOT_PHASE3_END - SLOT_PHASE2_END);
-        const eased = easeInOutCubic(t);
-        return SLOT_P2_END + (SLOT_P3_END - SLOT_P2_END) * eased;
-      }
       if (elapsed < SLOT_PAUSE_END) {
-        // 假停顿：2 次停顿中点对齐
-        // [4800, 5100) 间隔 ~500ms（停顿 1）
-        // [5100, 5400) 间隔 ~800ms（停顿 2）
-        if (elapsed < SLOT_PAUSE_END - 300) return SLOT_PAUSE_1;
-        return SLOT_PAUSE_2;
+        // 停顿阶段：200ms 间隔
+        return SLOT_PAUSE_INTERVAL;
       }
       return 0;
     }
 
     /** 是否处于"假停顿"阶段（用于控制音效是否播放） */
     function isInPausePhase(elapsed) {
-      return elapsed >= SLOT_PHASE3_END && elapsed < SLOT_PAUSE_END;
+      return elapsed >= SLOT_PHASE2_END && elapsed < SLOT_PAUSE_END;
     }
 
     /**
@@ -2697,14 +2872,13 @@
         swapLayers(text);
 
         // 音效：随阶段调整
-        //   · Phase 1（高速）: 正常音量、标准音高
+        //   · Phase 1（快速滚动）: 正常音量、标准音高
         //   · Phase 2（减速）: 略降音量、音高
-        //   · Phase 3（慢速）: 更轻、音高低
-        //   · Phase 4（假停顿）: 不播 tick（避免停顿期间的音效破坏节奏）
+        //   · Phase 3（停顿）: 不播 tick（避免停顿期间的音效破坏节奏）
         if (!isInPausePhase(elapsed)) {
           const progress = elapsed / SLOT_TOTAL_TIME;
-          const vol = progress < 0.30 ? 0.14 : (progress < 0.65 ? 0.10 : 0.07);
-          const pitchScale = 1 - progress * 0.35; // 前期 1.0 → 后期 0.65
+          const vol = progress < 0.35 ? 0.14 : 0.10;
+          const pitchScale = 1 - progress * 0.20; // 前期 1.0 → 后期 0.80
           playClick(vol, pitchScale);
         }
       }
@@ -2753,31 +2927,26 @@
         topicNode.classList.add('land');
       }
 
-      // 题目区域短暂高光（≈400ms 一次性）
+      // 题目区域短暂高光（≈450ms 一次性）
       slotWrap.classList.remove('reveal');
       // eslint-disable-next-line no-unused-expressions
       slotWrap.offsetWidth;
       slotWrap.classList.add('reveal');
       setTimeout(function () {
         slotWrap.classList.remove('reveal');
-      }, 420);
+      }, 450);
 
       // 退出 spinning 态
       slotWrap.classList.remove('spinning');
 
-      // 标签显示
-      const showTag = trainingScope.type !== 'all';
-      if (showTag) {
-        const label = getTopicGroupLabel(final);
-        tagEl.textContent = label;
-        tagEl.className = 'topic-tag show ' + (final.groupId == null ? 'ungrouped' : 'group');
-      } else {
-        tagEl.classList.remove('show');
-      }
+      // 揭晓后更新内嵌分类标签
+      renderSlotBadge();
 
       // 更新全局状态
       currentTopicId = final.id;
       lastTopicId = final.id;
+      // 在每次真正"结束一次挑战"（计时器 done 后）增加当日次数；
+      // 这里不增加 —— 抽题不等于完成训练。
       if (modal.classList.contains('open')) renderModalList();
 
       // 同步 UI
@@ -2787,7 +2956,7 @@
       setTimeout(function () {
         if (topicNode) topicNode.classList.remove('land');
         unlockDrawButton();
-      }, 420);
+      }, 450);
     }
 
     function lockDrawButton() {
@@ -3288,14 +3457,16 @@
     remaining = totalSeconds;
     timerEl.textContent = formatTime(totalSeconds);
     updateControls();
-    // 8) 初始化顶部标签为空
-    tagEl.textContent = '';
-    tagEl.className = 'topic-tag';
+    // 8) 初始化内嵌分类标签为隐藏
+    if (slotBadge) { slotBadge.textContent = ''; slotBadge.classList.remove('show'); }
+    // 8.5) 初始化训练次数（从 localStorage 读，跨日自动重置）
+    renderTrainCount(loadDailyCount(), false);
     // 9) 时间快捷按钮
     bindDurationPresets();
     syncDurationPresets();
-    // 10) 同步 UI 状态机
+    // 10) 同步 UI 状态机 + 分类标签
     syncUiState();
+    renderSlotBadge();
 
     /* 训练时长快捷按钮 + 自定义时分秒 */
     function getCurrentCustomSeconds() {
